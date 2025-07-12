@@ -122,7 +122,7 @@ void comparison(){
         {"bCosAlphaBS", "cos(#alpha_{BS})"}, {"bLBS", "Flight length [cm]"}, {"bDCABS", "B^{0} DCA from BS [cm]"}, 
         {"kstTrkmDCABS", "Negative track DCA from BS [cm]"}, {"kstTrkpDCABS", "Positive track DCA from BS [cm]"},
         {"muLeadingPt", "Leading muon p_{T} [GeV]"}, {"muTrailingPt", "Trailing muon p_{T} [GeV]"}   
-};
+    };
 
     // --- Create histograms ---
     for (const auto &name : var_plots){

@@ -45,7 +45,7 @@ void bMass_mc(){
     double mmin = 5;
     double mmax = 5.6;
 
-    TH1D *h_mc = new TH1D("h_mc", "B0 Mass (MC Truth Matched)", 100, mmin, mmax);
+    TH1D *h_mc = new TH1D("h_mc", "", 100, mmin, mmax);
 
     // --- Fill MC histogram ---
     cout << "Processing MC Events..." << endl;
