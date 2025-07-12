@@ -9,7 +9,7 @@ class BalancedLoss(nn.Module):
     """
     Implements balanced binary cross-entropy loss using class weights.
     """
-    def __init(self, alpha=None):
+    def __init__(self, alpha=None):
         super(BalancedLoss, self).__init__()
         self.alpha = alpha
 
@@ -18,7 +18,9 @@ class BalancedLoss(nn.Module):
         CE_loss = nn.functional.binary_cross_entropy(inputs, targets, reduction="none")
 
         if self.alpha is not None:
+            #Selects the weight based on the target value (1 or 0)
             alpha_t = self.alpha[1] * targets + self.alpha[0] * (1 - targets)
+            # apply per-sample weighting.
             CE_loss *= alpha_t
         
         # return the mean of the balanced cross-entropy loss

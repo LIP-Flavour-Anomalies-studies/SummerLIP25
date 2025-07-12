@@ -70,7 +70,7 @@ class ClassificationDataset(Dataset):
     def __init__(self, X, y):
         # Convert to torch tensors
         self.X = torch.from_numpy(X)
-        self.y = torch.form_numpy(y)
+        self.y = torch.from_numpy(y)
 
     def __len__(self):
         return len(self.y)

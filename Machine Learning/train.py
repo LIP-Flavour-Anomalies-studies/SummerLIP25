@@ -1,11 +1,25 @@
 """
-
+Handles the training loop.
 Teresa 12/07/2025
 """
 import torch
 import matplotlib.pyplot as plt
 
 def regul(val_loader, model, criterion, epoch, num_epochs, early_stopping):
+    """
+    Evaluates model on the validation set at each epoch.
+
+    Args:
+        val_loader (DataLoader): DataLoader for validation data.
+        model (torch.nn.Module): Model to be evaluated.
+        criterion (Loss): Loss function (e.g., BCE, FocalLoss).
+        epoch (int): Current epoch index.
+        num_epochs (int): Total number of training epochs.
+        early_stopping (EarlyStopping): Early stopping handler.
+
+    Returns:
+        float: Average validation loss for the epoch.
+    """
     model.eval()
     val_loss = 0.0
 
@@ -23,9 +37,23 @@ def regul(val_loader, model, criterion, epoch, num_epochs, early_stopping):
 
     return val_loss
 
+
 def train_model(model, early_stopping, train_loader, val_loader, criterion, optimizer, num_epochs=1000, flag=0):
     """
-    Train the model and plot training vs validation loss.
+    Trains the model and plots training vs validation loss with early stopping.
+
+    Args:
+        model (torch.nn.Module): Neural network to train.
+        early_stopping (EarlyStopping): Early stopping handler.
+        train_loader (DataLoader): Training data loader.
+        val_loader (DataLoader): Validation data loader.
+        criterion (Loss): Loss function.
+        optimizer (Optimizer): Optimizer for model weights.
+        num_epochs (int, optional): Max number of epochs. Defaults to 1000.
+        flag (int, optional): Plot type flag for output naming. Defaults to 0.
+
+    Returns:
+        None
     """
     stop = 0
     tl_vector, vl_vector = [], []

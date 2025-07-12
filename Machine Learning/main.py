@@ -1,5 +1,5 @@
 """
-
+Main script to run everything.
 Teresa 12/07/2025
 """
 import torch

@@ -48,13 +48,11 @@ void bMass(){
     t_mc->SetBranchAddress("truthMatchTrkp", &mc_truthMatchTrkp);
 
     // --- Create histograms ---
-    TH1D *h_bMass_data = new TH1D("h_bMass_data", "B0 Mass (Data)", 100, 4.8, 5.8);
-    TH1D *h_bMass_mc_truth_matched = new TH1D("h_bMass_mc_truth_matched", "B0 Mass (MC Truth Matched)", 100, 4.8, 5.8);
+    TH1D *h_bMass_data = new TH1D("h_bMass_data", "", 100, 4.8, 5.8);
+    TH1D *h_bMass_mc_truth_matched = new TH1D("h_bMass_mc_truth_matched", "", 100, 4.8, 5.8);
 
     h_bMass_data->GetXaxis()->SetTitle("m(B^{0}) [GeV/c^{2}]");
     h_bMass_data->GetYaxis()->SetTitle("Events / Bin (Normalized)");
-    h_bMass_mc_truth_matched->GetXaxis()->SetTitle("m(B^{0}) [GeV/c^{2}]");
-    h_bMass_mc_truth_matched->GetYaxis()->SetTitle("Events / Bin (Normalized)");
 
     // --- Fill data histogram ---
     cout << "Processing Data Events..." << endl;
@@ -63,7 +61,7 @@ void bMass(){
         t_data->GetEntry(i);
 
         //Selection cuts
-        if (data_bVtxCL < 0.01) continue; // skip events with poor vertex fit   
+        // if (data_bVtxCL < 0.01) continue; // skip events with poor vertex fit   
 
         double bMass_data = (data_tagB0 == 1) ? data_bMass : data_bBarMass;
 		if (bMass_data < 5.0 || bMass_data > 5.6) continue;
@@ -91,7 +89,7 @@ void bMass(){
         //if (mc_bVtxCL < 0.01) continue; // skip events with poor vertex fit   
 
         double bMass_mc = (mc_tagB0 == 1) ? mc_bMass : mc_bBarMass;
-		if (bMass_mc < 5.134 || bMass_mc > 5.416) continue;
+		if (bMass_mc < 5 || bMass_mc > 5.6) continue;
 
         h_bMass_mc_truth_matched->Fill(bMass_mc);
     }
@@ -133,7 +131,7 @@ void bMass(){
     leg->SetFillStyle(0);
     leg->SetTextSize(0.035);
     leg->AddEntry(h_bMass_data, "Data", "lp");
-    leg->AddEntry(h_bMass_mc_truth_matched, "MC", "lf");
+    leg->AddEntry(h_bMass_mc_truth_matched, "MC (matched)", "lf");
     leg->Draw();
 
     c_bMass->SaveAs("Data_vs_MC_TruthMatched.png");
