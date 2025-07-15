@@ -26,8 +26,8 @@ void bMass_data(){
     
 
     // --- Create histogram ---
-    TH1D *h = new TH1D("h", "B0 Mass (Data)", 100, 4.8, 5.8);
-    h->GetXaxis()->SetTitle("m(B^{0}) [GeV/c^{2}]");
+    TH1D *h = new TH1D("h", "", 100, 4.8, 5.8);
+    h->GetXaxis()->SetTitle("m(B^{0}) Data [GeV/c^{2}]");
     h->GetYaxis()->SetTitle("Events");
 
 
@@ -49,17 +49,17 @@ void bMass_data(){
     cout << "Total events: " << nEntries_data << endl;
     cout << "Selected events: " << events_selected << endl;
 
-    TCanvas *c = new TCanvas("c", "B0 Mass", 800, 600);
+    TCanvas *c = new TCanvas("c", "", 800, 600);
     c->SetLeftMargin(0.12);
     c->SetBottomMargin(0.12);
-    h->Draw();
+
+    h->SetLineColor(kBlue);
+    h->SetFillColorAlpha(kBlue, 0.5);
+    h->Draw("Hist");
     //c->SetLogy(true);
     c->SaveAs("fit_data.png");
 
 
     f_data->Close();
-
-    f_sideband->cd();
-    t_sideband->Write()
 
 }
