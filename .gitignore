@@ -13,3 +13,9 @@ __pycache__/
 
 # Log files
 *.log
+
+# root files, pdf and images
+*.root
+*.pdf
+*.png
+

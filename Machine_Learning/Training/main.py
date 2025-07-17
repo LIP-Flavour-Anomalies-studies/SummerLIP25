@@ -19,7 +19,7 @@ sns.set_style("darkgrid")
 
 def main():
     try:
-        dir = "/user/u/u25teresaesc/Internship/Signal_vs_Background/ROOT files"
+        dir = "/user/u/u25teresaesc/Internship/Signal_vs_Background/ROOT_files"
         file_signal = "signal.root"
         file_back = "background.root"
 
@@ -79,12 +79,12 @@ def main():
         torch.save({"model_state_dict": B_model.state_dict(),
                     "optimizer_state_dict": B_optimizer.state_dict(),
                     "dataset": dataset,
-                    "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "B_model_checkpoint_v0.pth"))
+                    "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "B_model_checkpoint_v1.pth"))
         
         torch.save({"model_state_dict": F_model.state_dict(),
                     "optimizer_state_dict": F_optimizer.state_dict(),
                     "dataset": dataset,
-                    "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "F_model_checkpoint_v0.pth"))
+                    "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "F_model_checkpoint_v1.pth"))
         
     except Exception as e:
         print(f"An error occurred: {e}")

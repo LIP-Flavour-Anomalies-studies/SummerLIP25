@@ -40,7 +40,6 @@ def prepdata(dir_path, root_mc, root_data):
     # List of variables to extract (features)
     variables = ["bVtxCL", "kstTMass", "bCosAlphaBS", "bLBSs",
             "bDCABSs", "kstTrkmDCABSs", "kstTrkpDCABSs",
-            "kstPt", "kstPhi", "kstEta",
             "muLeadingPt", "muTrailingPt"]
 
     # Load features as numpy arrays from ROOT trees

@@ -110,12 +110,12 @@ void comparison(){
     map<string, tuple<int, double, double>> histParams = {
 		{"bMass", {nbins, mmin, mmax}}, {"bPt", {nbins, 0, 40}}, {"bEta", {nbins, -3, 3}}, {"bPhi", {nbins, -3.5, 3.5}}, {"bVtxCL", {nbins, 0, 1}},
 		{"kstMass", {nbins, 0.5, 1.5}}, {"kstPt", {nbins, 0, 5}}, {"kstEta", {nbins, -3, 3}}, {"kstPhi", {nbins, -3.5, 3.5}},
-		{"mumuMass", {nbins, 0, 4.5}}, {"mumuPt", {nbins, 0, 30}}, {"mumuEta", {nbins, -3, 3}}, {"mumuPhi", {nbins, -3.5, 3.5}},
+		{"mumuMass", {nbins, 0, 4.5}}, {"mumuPt", {nbins, 0, 40}}, {"mumuEta", {nbins, -3, 3}}, {"mumuPhi", {nbins, -3.5, 3.5}},
 		{"kstTrkmPt", {nbins, 0, 5}}, {"kstTrkmEta", {nbins, -3, 3}}, {"kstTrkmPhi", {nbins, -3.5, 3.5}},
 		{"kstTrkpPt", {nbins, 0, 5}}, {"kstTrkpEta", {nbins, -3, 3}}, {"kstTrkpPhi", {nbins, -3.5, 3.5}},
 		{"mumPt", {nbins, 0, 30}}, {"mumEta", {nbins, -3, 3}}, {"mumPhi", {nbins, -3.5, 3.5}},
 		{"mupPt", {nbins, 0, 30}}, {"mupEta", {nbins, -3, 3}}, {"mupPhi", {nbins, -3.5, 3.5}},
-        {"bCosAlphaBS", {nbins, 0.8, 1.}}, {"bLBS", {nbins, 0., 1.}}, {"bDCABS", {nbins, -0.05, 0.05}},
+        {"bCosAlphaBS", {nbins, 0.8, 1.}}, {"bLBS", {nbins, 0., 0.5}}, {"bDCABS", {nbins, -0.05, 0.05}},
         {"kstTrkmDCABS", {nbins, -1, 1}}, {"kstTrkpDCABS", {nbins, -1, 1}},
         {"muLeadingPt", {nbins, 0, 30}}, {"muTrailingPt", {nbins, 0, 30}}
     };
@@ -132,7 +132,7 @@ void comparison(){
         {"kstTrkpEta", "Positive track #eta"}, {"kstTrkpPhi", "Positive track #phi [rad]"},
         {"mumPt", "p_{T}(#mu^{--}) [GeV]"}, {"mumEta", "#eta(#mu^{--})"}, {"mumPhi", "#phi(#mu^{--}) [rad]"},
         {"mupPt", "p_{T}(#mu^{+}) [GeV]"}, {"mupEta", "#eta(#mu^{+})"}, {"mupPhi", "#phi(#mu^{+}) [rad]"},
-        {"bCosAlphaBS", "cos(#alpha_{BS})"}, {"bLBS", "Flight length [cm]"}, {"bDCABS", "B^{0} DCA from BS [cm]"}, 
+        {"bCosAlphaBS", "cos(#alpha)"}, {"bLBS", "Flight length [cm]"}, {"bDCABS", "B^{0} DCA from BS [cm]"}, 
         {"kstTrkmDCABS", "Negative track DCA from BS [cm]"}, {"kstTrkpDCABS", "Positive track DCA from BS [cm]"},
         {"muLeadingPt", "Leading muon p_{T} [GeV]"}, {"muTrailingPt", "Trailing muon p_{T} [GeV]"}   
     };
@@ -241,6 +241,13 @@ void comparison(){
 		if (h_mc[name]->Integral() > 0)
 			h_mc[name]->Scale(1.0 / h_mc[name]->Integral());
 	}
+
+    // Vertical lines for specific plots
+    map<string, vector<double>> verticalLines = {
+        {"bVtxCL", {0.1}},       
+        {"bLBS", {0.04}},     
+        {"bCosAlphaBS", {0.985}},
+    };
     
     // --- Draw Histograms ---
     cout << "Drawing histograms..." << endl;
@@ -267,6 +274,17 @@ void comparison(){
 		h_data[name]->Draw("HIST");
 		h_mc[name]->Draw("HIST SAME");
 
+        // Draw vertical lines if applicable
+        if (verticalLines.count(name)) {
+            for (double xpos : verticalLines[name]) {
+                TLine *line = new TLine(xpos, 0, xpos, 1.1 * max_val);
+                line->SetLineColor(kBlack);
+                line->SetLineStyle(2); // dashed
+                line->SetLineWidth(2);
+                line->Draw();
+            }
+        }
+
         
         // Add legend  
         TLegend *leg = new TLegend(0.65, 0.75, 0.88, 0.88);
@@ -276,7 +294,8 @@ void comparison(){
         leg->SetBorderSize(0);
         leg->Draw();
 
-        c->SaveAs(("PLOTS comparison/" + name + ".png").c_str());
+        c->SaveAs(("/user/u/u25teresaesc/Internship/Signal_vs_Background/PLOTS_comparison/" + name + ".png").c_str());
+        delete c;
     }
 
     // Clean up

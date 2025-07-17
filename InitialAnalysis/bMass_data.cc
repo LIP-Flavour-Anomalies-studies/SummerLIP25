@@ -16,6 +16,8 @@ void bMass_data(){
     double data_bMass, data_bBarMass, data_tagB0;
     double data_bVtxCL;
     double data_mumuMass;
+    double data_bCosAlphaBS;
+    double data_bLBS;
 
     
     t_data->SetBranchAddress("bMass", &data_bMass);
@@ -23,7 +25,8 @@ void bMass_data(){
     t_data->SetBranchAddress("tagB0", &data_tagB0);
     t_data->SetBranchAddress("bVtxCL", &data_bVtxCL);
     t_data->SetBranchAddress("mumuMass", &data_mumuMass);
-    
+    t_data->SetBranchAddress("bCosAlphaBS", &data_bCosAlphaBS);
+    t_data->SetBranchAddress("bLBS", &data_bLBS);
 
     // --- Create histogram ---
     TH1D *h = new TH1D("h", "", 100, 4.8, 5.8);
@@ -37,7 +40,9 @@ void bMass_data(){
         t_data->GetEntry(i);
 
         //Selection cuts
-        //if (data_bVtxCL < 0.01) continue;   
+        if (data_bVtxCL < 0.1) continue; 
+        if (data_bCosAlphaBS < 0.985) continue;
+        if (data_bLBS < 0.04) continue;  
 
         double mass_b = (data_tagB0 == 1) ? data_bMass : data_bBarMass;
 		if (mass_b < 5.0 || mass_b > 5.6) continue;
