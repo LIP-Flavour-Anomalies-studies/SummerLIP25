@@ -33,10 +33,11 @@ signal = Tsignal.arrays(variables, library="np")
 background = Tback.arrays(variables, library="np")
 
 # number of threshold points for ROC
-n_thresh = 100
+n_thresh = 1000
 
 # Store data for graphs 
 roc_data = {}
+cuts = {}
 
 for var in variables:
     s_vals = signal[var]
@@ -48,6 +49,7 @@ for var in variables:
 
     s_eff = []
     b_eff = []
+    foms = []
 
     for t in thresholds:
 
@@ -55,12 +57,34 @@ for var in variables:
         b_pass = b_vals > t 
 
         # fraction of events that passed the cut
-        s_eff.append(np.sum(s_pass) / len(s_vals))
-        b_eff.append((np.sum(b_pass) / len(b_vals)))
+        s_e = np.sum(s_pass) / len(s_vals)
+        b_e = np.sum(b_pass) / len(b_vals)
+        if (s_e + b_e) > 0:
+            fom = s_e / np.sqrt(s_e + b_e) 
+        else:
+            fom = 0
 
-    # sort points for AUC calculation
+        s_eff.append(s_e)
+        b_eff.append(b_e)
+        foms.append(fom)
+
+    # turn into arrays
     s_eff = np.array(s_eff)
     b_eff = np.array(b_eff)
+    foms = np.array(foms)
+
+    # get cuts suggestions
+    cut_idx = np.argmax(foms)
+    best_thresh = thresholds[cut_idx]
+
+    cuts[var] = {
+        "cut": best_thresh,
+        "s_eff": s_eff[cut_idx],
+        "b_eff": b_eff[cut_idx],
+        "fom": foms[cut_idx]
+    }
+
+    # sort points for AUC calculation
     sorted_idx = np.argsort(b_eff)
     auc_val = auc(b_eff[sorted_idx], s_eff[sorted_idx])
 
@@ -69,6 +93,10 @@ for var in variables:
         "b_eff": b_eff,
         "auc": auc_val
     }
+
+# Print cut suggestions
+for var, cut_info in cuts.items():
+    print(f"{var:10s} > {cut_info['cut']:.3f} | Signal eff: {cut_info['s_eff']:.3f} | Background eff: {cut_info['b_eff']:.3f} | FOM: {cut_info['fom']:.3f}")
 
 # Plot ROC curves 
 plt.figure(figsize=(10, 8))

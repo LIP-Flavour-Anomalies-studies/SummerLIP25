@@ -14,19 +14,42 @@ void bMass_data(){
 
     // --- Declare variables for data ---
     double data_bMass, data_bBarMass, data_tagB0;
-    double data_bVtxCL;
-    double data_mumuMass;
-    double data_bCosAlphaBS;
-    double data_bLBS;
+    double kstMass, kstBarMass;
 
-    
     t_data->SetBranchAddress("bMass", &data_bMass);
     t_data->SetBranchAddress("bBarMass", &data_bBarMass);
     t_data->SetBranchAddress("tagB0", &data_tagB0);
-    t_data->SetBranchAddress("bVtxCL", &data_bVtxCL);
-    t_data->SetBranchAddress("mumuMass", &data_mumuMass);
-    t_data->SetBranchAddress("bCosAlphaBS", &data_bCosAlphaBS);
-    t_data->SetBranchAddress("bLBS", &data_bLBS);
+    t_data->SetBranchAddress("kstMass", &kstMass);
+    t_data->SetBranchAddress("kstBarMass", &kstBarMass);
+
+    // --- Variables to apply cuts based on ROC analysis ---
+
+    bool skipcuts = false; // true if don't want to apply cuts
+
+    map<string, double> vars_cuts;
+    map<string, double> cuts;
+
+    vector<string> variables = {
+        "bVtxCL", "bPt", "kstPt", "mumuMass", "mumuPt", 
+        "kstTrkmPt", "kstTrkmDCABS", "kstTrkpPt", "kstTrkpDCABS",
+        "mumPt", "mupPt", "bCosAlphaBS", "bLBS", "bDCABS",
+    };
+    
+    if (!skipcuts){
+
+        for (const auto &name : variables){
+            vars_cuts[name] = 0;
+            t_data->SetBranchAddress(name.c_str(), &vars_cuts[name]);
+        }
+        
+        cuts = {
+            {"bVtxCL", 0.024}, {"bPt", 11.392}, {"kstPt", 1.324}, {"mumuMass", 2.982}, {"mumuPt", 8.313},
+            {"kstTrkmPt", 0.673}, {"kstTrkpPt", 0.621}, {"kstTrkmDCABS", -0.586}, {"kstTrkpDCABS", -0.657},
+            {"mumPt", 3.101}, {"mupPt", 3.241}, {"bCosAlphaBS", 0.996}, {"bLBS", 0.024}, {"bDCABS", -0.004}
+        };
+
+    }
+
 
     // --- Create histogram ---
     TH1D *h = new TH1D("h", "", 100, 4.8, 5.8);
@@ -39,10 +62,21 @@ void bMass_data(){
     for(Long64_t i = 0; i < nEntries_data; i++){    
         t_data->GetEntry(i);
 
-        //Selection cuts
-        if (data_bVtxCL < 0.1) continue; 
-        if (data_bCosAlphaBS < 0.985) continue;
-        if (data_bLBS < 0.04) continue;  
+        //Selection cuts based on ROC analysis
+        
+        if (!skipcuts){
+            double mass_kst = (data_tagB0 == 1) ? kstMass : kstBarMass;
+            if (mass_kst < 0.798) continue;
+
+            bool pass_cuts = true;
+            for (const auto &name : variables){
+                if (vars_cuts[name] < cuts[name]){
+                    pass_cuts = false;
+                    break;
+                }
+            }
+            if (!pass_cuts) continue;
+        }
 
         double mass_b = (data_tagB0 == 1) ? data_bMass : data_bBarMass;
 		if (mass_b < 5.0 || mass_b > 5.6) continue;

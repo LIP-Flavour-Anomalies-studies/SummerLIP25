@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, random_split
 import os
 import numpy as np
 import seaborn as sns
+from sklearn.model_selection import train_test_split
 
 from prepdata_v0 import prepdata, ClassificationDataset
 from models import ClassificationModel
@@ -26,14 +27,19 @@ def main():
         x, y = prepdata(dir, file_signal, file_back)
         dataset = ClassificationDataset(x, y)
 
-        # Calculate lengths based on dataset size
-        total_len = len(dataset)
-        train_len = int(0.5 * total_len)
-        test_len = int(0.25 * total_len)
-        val_len = total_len - train_len - test_len
+        # Stratified splitting to keep class proportions
+        x_train_val, x_test, y_train_val, y_test = train_test_split(
+            x, y, test_size=0.25, stratify=y, random_state=42
+        )
+        x_train, x_val, y_train, y_val = train_test_split(
+            x_train_val, y_train_val, test_size=0.3333, stratify=y_train_val, random_state=42
+        )
+        # Now approx 50% train, 25% val, 25% test
 
-        # Create random splits 
-        train_set, test_set, val_set = random_split(dataset, [train_len, test_len, val_len])
+        # Create datasets
+        train_set = ClassificationDataset(x_train, y_train)
+        val_set = ClassificationDataset(x_val, y_val)
+        test_set = ClassificationDataset(x_test, y_test)
 
         # Verify lengths
         print("Training set length:", len(train_set))
@@ -91,5 +97,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

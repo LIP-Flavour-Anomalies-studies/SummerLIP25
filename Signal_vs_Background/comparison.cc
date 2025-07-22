@@ -275,15 +275,15 @@ void comparison(){
 		h_mc[name]->Draw("HIST SAME");
 
         // Draw vertical lines if applicable
-        if (verticalLines.count(name)) {
-            for (double xpos : verticalLines[name]) {
-                TLine *line = new TLine(xpos, 0, xpos, 1.1 * max_val);
-                line->SetLineColor(kBlack);
-                line->SetLineStyle(2); // dashed
-                line->SetLineWidth(2);
-                line->Draw();
-            }
-        }
+        //if (verticalLines.count(name)) {
+          //  for (double xpos : verticalLines[name]) {
+            //    TLine *line = new TLine(xpos, 0, xpos, 1.1 * max_val);
+            //  line->SetLineColor(kBlack);
+            //  line->SetLineStyle(2); // dashed
+            //  line->SetLineWidth(2);
+            //  line->Draw();
+        //    }
+        //}
 
         
         // Add legend  
