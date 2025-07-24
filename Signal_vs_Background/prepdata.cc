@@ -57,8 +57,9 @@ void prepdata(){
         "bCosAlphaBS", "bLBS", "bDCABS",
         "muLeadingPt", "muTrailingPt",
         "bLBSs", "bDCABSs",
-        "kstTrkmDCABSs", "kstTrkpDCABSs"
-
+        "kstTrkmDCABSs", "kstTrkpDCABSs",
+        "kstTrkpPtR", "kstTrkmPtR", "mumPtR", "mupPtR",
+        "mumuPtR", "kstPtR"
 	};
 
     // newly created variables (not previously in the file)
@@ -66,7 +67,9 @@ void prepdata(){
         "bTMass", "kstTMass", 
         "muLeadingPt", "muTrailingPt",
         "bLBSs", "bDCABSs",
-        "kstTrkmDCABSs", "kstTrkpDCABSs"
+        "kstTrkmDCABSs", "kstTrkpDCABSs",
+        "kstTrkpPtR", "kstTrkmPtR", "mumPtR", "mupPtR",
+        "mumuPtR", "kstPtR"
     };
 
     // variables for matching
@@ -116,17 +119,19 @@ void prepdata(){
 
         if (mass_b < s_left || mass_b > s_right){
             for (const auto &name : var_files){
+                // Fill already existent variables
                 if (find(var_new.begin(), var_new.end(), name) == var_new.end()){
                     vars_background[name] = vars_data[name];
                 }
             }
             
-            // Fill tree only after setting all variables correctly
+            // Fill newly created variables
             vars_background["bTMass"] = mass_b;
             vars_background["kstTMass"] = mass_kst;
             vars_background["muTrailingPt"] = muTrailingPt;
             vars_background["muLeadingPt"] = muLeadingPt;
 
+            // significance variables
             if (vars_data["bLBSE"] != 0){
                 vars_background["bLBSs"] = vars_data["bLBS"] / vars_data["bLBSE"];
             } 
@@ -141,6 +146,17 @@ void prepdata(){
 
             if (vars_data["kstTrkpDCABSE"] != 0){
                 vars_background["kstTrkpDCABSs"] = vars_data["kstTrkpDCABS"] / vars_data["kstTrkpDCABSE"];
+            } 
+
+            // relative pt 
+            if (vars_data["bPt"] != 0){
+                vars_background["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
+                vars_background["kstTrkmPtR"] = vars_data["kstTrkmPt"] / vars_data["bPt"];
+                vars_background["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
+                vars_background["mupPtR"] = vars_data["mupPt"] / vars_data["bPt"];
+                vars_background["mumPtR"] = vars_data["mumPt"] / vars_data["bPt"];
+                vars_background["mumuPtR"] = vars_data["mumuPt"] / vars_data["bPt"];
+                vars_background["kstPtR"] = vars_data["kstPt"] / vars_data["bPt"];
             } 
 
             t_background->Fill();
@@ -196,6 +212,16 @@ void prepdata(){
 
             if (vars_mc["kstTrkpDCABSE"] != 0){
                 vars_signal["kstTrkpDCABSs"] = vars_mc["kstTrkpDCABS"] / vars_mc["kstTrkpDCABSE"];
+            } 
+
+            if (vars_mc["bPt"] != 0){
+                vars_signal["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
+                vars_signal["kstTrkmPtR"] = vars_mc["kstTrkmPt"] / vars_mc["bPt"];
+                vars_signal["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
+                vars_signal["mupPtR"] = vars_mc["mupPt"] / vars_mc["bPt"];
+                vars_signal["mumPtR"] = vars_mc["mumPt"] / vars_mc["bPt"];
+                vars_signal["mumuPtR"] = vars_mc["mumuPt"] / vars_mc["bPt"];
+                vars_signal["kstPtR"] = vars_mc["kstPt"] / vars_mc["bPt"];
             } 
 
             t_signal->Fill();
