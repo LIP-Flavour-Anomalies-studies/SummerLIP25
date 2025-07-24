@@ -19,13 +19,13 @@ from sklearn.metrics import roc_auc_score
 sns.set_style("darkgrid")
 
 # Add the directory containing NeuralNetwork.py to the Python path
-sys.path.append(os.path.abspath("/user/u/u25teresaesc/Internship/Machine_Learning/Training"))
+sys.path.append(os.path.abspath("Machine_Learning/Training"))
 
 from models import ClassificationModel
 
 def load_model():
     # Load checkpoint
-    checkpoint_path = "/user/u/u25teresaesc/Internship/Machine_Learning/Evaluation/checkpoints/B_model_checkpoint_v1.pth"
+    checkpoint_path = "Machine_Learning/Evaluation/checkpoints/B_model_checkpoint_v1.pth"
     checkpoint = torch.load(checkpoint_path, weights_only=False)
 
     # Load full dataset and test set

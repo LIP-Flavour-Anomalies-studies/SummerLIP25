@@ -20,7 +20,7 @@ sns.set_style("darkgrid")
 
 def main():
     try:
-        dir = "/user/u/u25teresaesc/Internship/Signal_vs_Background/ROOT_files"
+        dir = "Signal_vs_Background/ROOT_files"
         file_signal = "signal.root"
         file_back = "background.root"
 
@@ -79,7 +79,7 @@ def main():
         train_model(F_model, F_early_stopping, train_loader, val_loader, F_criterion, F_optimizer, flag=1)
 
         # Save models
-        checkpoint_dir = "/user/u/u25teresaesc/Internship/Machine_Learning/Evaluation"
+        checkpoint_dir = "Machine_Learning/Evaluation/checkpoints"
         os.makedirs(checkpoint_dir, exist_ok=True)
 
         torch.save({"model_state_dict": B_model.state_dict(),

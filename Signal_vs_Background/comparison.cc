@@ -31,7 +31,7 @@ void comparison(){
     TTree *t_signal = nullptr;
 
     if (!skipTree){
-        TFile *f_comparison = new TFile("comparison.root", "RECREATE");
+        TFile *f_comparison = new TFile("Signal_vs_Background/ROOT_files/comparison.root", "RECREATE");
         TTree *t_background = new TTree("Tback", "Background Sidebands");
         TTree *t_signal = new TTree("Tsignal", "MC Signal");
     }
@@ -294,7 +294,7 @@ void comparison(){
         leg->SetBorderSize(0);
         leg->Draw();
 
-        c->SaveAs(("/user/u/u25teresaesc/Internship/Signal_vs_Background/PLOTS_comparison/" + name + ".png").c_str());
+        c->SaveAs(("Signal_vs_Background/PLOTS_comparison/" + name + ".png").c_str());
         delete c;
     }
 

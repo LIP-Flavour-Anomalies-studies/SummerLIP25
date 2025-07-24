@@ -10,7 +10,7 @@ import seaborn as sns
 sns.set_style("darkgrid")
 
 # Paths
-dir_path = "/user/u/u25teresaesc/Internship/Signal_vs_Background/ROOT_files"
+dir_path = "Signal_vs_Background/ROOT_files"
 root_signal = "signal.root"
 root_back = "background.root"
 

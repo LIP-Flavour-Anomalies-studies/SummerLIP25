@@ -20,10 +20,10 @@ void prepdata(){
 	TTree *t_mc = (TTree*)f_mc->Get("ntuple");
 
     // --- Output files and trees ---
-    TFile *f_background = new TFile("background.root", "RECREATE");
+    TFile *f_background = new TFile("Signal_vs_Background/ROOT_files/background.root", "RECREATE");
     TTree *t_background = new TTree("Tback", "Tree with selected variables from experimental data");
 
-    TFile *f_signal = new TFile("signal.root", "RECREATE");
+    TFile *f_signal = new TFile("Signal_vs_Background/ROOT_files/signal.root", "RECREATE");
     TTree *t_signal = new TTree("Tsignal", "Tree with selected variables from Monte Carlo");
 
     // --- Storage for input/output variable values ---
