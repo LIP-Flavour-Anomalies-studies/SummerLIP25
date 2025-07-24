@@ -63,7 +63,7 @@ cd SummerLIP25
 # Create virtual environment
 python -m venv myenv
 # Activate it (Linux/macOS)
-source venv/bin/activate
+source myenv/bin/activate
 ```
 
 ### 4. Install Required Packages
@@ -74,12 +74,13 @@ pip install -r requirements.txt
 
 ## How to Use the Project
 
-1. Run `Signal_vs_Background/prepdata.cc` 
+1. `module load root` 
+2. Run `root Signal_vs_Background/prepdata.cc` 
     - Creates new signal and background ROOT files with selected variables.
-2. Run `Machine_Learning/Training/main.py`
+2. Run `python Machine_Learning/Training/main.py`
     - Trains model using preprocessed data 
     - Check which variables are being used for training in `Machine_Learning/Training/prepdata_v0.py`.
-3. Run `Machine_Learning/Evaluation/evaluation.py`
+3. Run `python Machine_Learning/Evaluation/evaluation.py`
     - Evaluates trained models with different loss functions.
 
 --- 

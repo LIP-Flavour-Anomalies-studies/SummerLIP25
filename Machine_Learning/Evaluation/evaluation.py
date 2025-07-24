@@ -18,15 +18,15 @@ from sklearn.metrics import roc_auc_score
 sns.set_style("darkgrid")
 
 # Add the directory containing NeuralNetwork.py to the Python path
-sys.path.append(os.path.abspath("/user/u/u25teresaesc/Internship/Machine_Learning/Training"))
+sys.path.append(os.path.abspath("Machine_Learning/Training"))
 from models import ClassificationModel
 
 def load_model(loss_type):
 
     if loss_type == "focal":
-        checkpoint_path = "/user/u/u25teresaesc/Internship/Machine_Learning/Evaluation/checkpoints/F_model_checkpoint_v1.pth"
+        checkpoint_path = "Machine_Learning/Evaluation/checkpoints/F_model_checkpoint_v1.pth"
     elif loss_type == "binary":
-        checkpoint_path = "/user/u/u25teresaesc/Internship/Machine_Learning/Evaluation/checkpoints/B_model_checkpoint_v1.pth"
+        checkpoint_path = "Machine_Learning/Evaluation/checkpoints/B_model_checkpoint_v1.pth"
     else:
         raise ValueError("Invalid loss type. Use 'focal' or 'binary'.")
 
@@ -198,7 +198,7 @@ def evaluate_model(model, test_loader, loss_type):
 
     plt.figure()
     plt.plot(fpr, tpr, lw=2, label=f"ROC Curve (AUC = {auc:.3f})")
-    plt.scatter(best_point[0], best_point[1], color="black", label="Best Threshold")
+    #plt.scatter(best_point[0], best_point[1], color="black", label="Best Threshold")
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
     plt.legend(loc="lower right")
@@ -231,22 +231,42 @@ def plot_histogram(model, data_loader, labels, best_thr, loss_type):
     plt.hist(signal_predict, bins=40, density=True, alpha=0.9, label="Signal (MC)", color="blue", range=(0.0, 1.0))
     plt.hist(background_predict, bins=40, density=True, alpha=0.5, label="Background (Data)", color="red", hatch="//", edgecolor="black", range=(0.0, 1.0))
 
-    plt.axvline(x=best_thr, color="black", lw=2, linestyle="--", label=f"Threshold = {best_thr:.2f}")
+    #plt.axvline(x=best_thr, color="black", lw=2, linestyle="--", label=f"Threshold = {best_thr:.2f}")
     plt.xlabel("Predicted Probability", fontsize=14, labelpad=15)
     plt.ylabel("Normalized Density", fontsize=14, labelpad=15)
     plt.legend()
     plt.savefig(f"{loss_type[0].upper()}_prob_distribution.pdf")
     plt.close()
 
+def plot_combined_roc(roc_data):
+    plt.figure()
+    for loss_type, (fpr, tpr, auc, best_point) in roc_data.items():
+        label = f"{loss_type.capitalize()} Loss (AUC = {auc:.3f})"
+        plt.plot(fpr, tpr, label=label)
+        #plt.scatter(best_point[0], best_point[1], label=f"{loss_type.capitalize()} Best Threshold", marker='o')
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.legend(loc="lower right")
+    plt.savefig("combined_roc_curve.pdf")
+    plt.close()
+    print("Combined ROC curve saved to combined_roc_curve.pdf")    
+
 
 def main():
+    roc_data = {}
     for loss_type in ["focal", "binary"]:
         try:
             model, test_loader = load_model(loss_type)
             probabilities, targets, best_thr = evaluate_model(model, test_loader, loss_type)
+            fpr, tpr, auc, _, best_point = calculate_fom_roc(torch.tensor(probabilities), torch.tensor(targets))
+            roc_data[loss_type] = (fpr, tpr, auc, best_point)
             plot_histogram(model, test_loader, targets, best_thr, loss_type)
         except Exception as e:
             print(f"[{loss_type.upper()}] An error occurred: {e}")
+
+    # Plot merged ROC after both evaluations
+    plot_combined_roc(roc_data)
 
 
 if __name__ == '__main__':
