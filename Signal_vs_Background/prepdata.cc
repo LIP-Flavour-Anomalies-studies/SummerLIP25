@@ -58,7 +58,7 @@ void prepdata(){
         "muLeadingPt", "muTrailingPt",
         "bLBSs", "bDCABSs",
         "kstTrkmDCABSs", "kstTrkpDCABSs",
-        "kstTrkpPtR", "kstTrkmPtR", "mumPtR", "mupPtR",
+        "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR",
         "mumuPtR", "kstPtR"
 	};
 
@@ -68,7 +68,7 @@ void prepdata(){
         "muLeadingPt", "muTrailingPt",
         "bLBSs", "bDCABSs",
         "kstTrkmDCABSs", "kstTrkpDCABSs",
-        "kstTrkpPtR", "kstTrkmPtR", "mumPtR", "mupPtR",
+        "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR",
         "mumuPtR", "kstPtR"
     };
 
@@ -153,8 +153,8 @@ void prepdata(){
                 vars_background["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
                 vars_background["kstTrkmPtR"] = vars_data["kstTrkmPt"] / vars_data["bPt"];
                 vars_background["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
-                vars_background["mupPtR"] = vars_data["mupPt"] / vars_data["bPt"];
-                vars_background["mumPtR"] = vars_data["mumPt"] / vars_data["bPt"];
+                vars_background["muLeadingPtR"] = vars_data["muLeadingPt"] / vars_data["bPt"];
+                vars_background["muTrailingPtR"] = vars_data["muTrailingPt"] / vars_data["bPt"];
                 vars_background["mumuPtR"] = vars_data["mumuPt"] / vars_data["bPt"];
                 vars_background["kstPtR"] = vars_data["kstPt"] / vars_data["bPt"];
             } 
@@ -218,8 +218,8 @@ void prepdata(){
                 vars_signal["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
                 vars_signal["kstTrkmPtR"] = vars_mc["kstTrkmPt"] / vars_mc["bPt"];
                 vars_signal["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
-                vars_signal["mupPtR"] = vars_mc["mupPt"] / vars_mc["bPt"];
-                vars_signal["mumPtR"] = vars_mc["mumPt"] / vars_mc["bPt"];
+                vars_signal["muLeadingPtR"] = vars_mc["muLeadingPt"] / vars_mc["bPt"];
+                vars_signal["muTrailingPtR"] = vars_mc["muTrailingPt"] / vars_mc["bPt"];
                 vars_signal["mumuPtR"] = vars_mc["mumuPt"] / vars_mc["bPt"];
                 vars_signal["kstPtR"] = vars_mc["kstPt"] / vars_mc["bPt"];
             } 

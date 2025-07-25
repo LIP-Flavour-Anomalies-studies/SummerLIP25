@@ -99,14 +99,17 @@ def train_model(model, early_stopping, train_loader, val_loader, criterion, opti
     plt.ylabel("Loss")
     plt.title("Loss Over Epochs")
     plt.legend()
+
     # Dynamic y-axis focus around the plateau
-    #min_loss = min(min(tl_vector), min(vl_vector))
-    #plt.ylim(min_loss * 0.9, min_loss * 1.2)  # zoom around the lowest loss
+    min_loss = min(min(tl_vector), min(vl_vector))
+    max_loss = max(min(tl_vector), min(vl_vector))
+    plt.ylim(min_loss * 0.95, max_loss * 1.2)  
+
     if flag == 0:
         plt.savefig("B_loss_v0.pdf")
-        plt.ylim(0, max(max(tl_vector), max(vl_vector))/1.5) 
+        #plt.ylim(0, max(max(tl_vector), max(vl_vector))/1.5) 
     else:
         plt.savefig("F_loss_v0.pdf")
-        plt.ylim(0, max(max(tl_vector), max(vl_vector))/4)
+        #plt.ylim(0, max(max(tl_vector), max(vl_vector))/4)
     plt.close() 
     

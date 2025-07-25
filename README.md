@@ -75,12 +75,14 @@ pip install -r requirements.txt
 ## How to Use the Project
 
 1. `module load root` 
-2. Run `root Signal_vs_Background/prepdata.cc` 
+2. Activate environment
+3. Run `root Signal_vs_Background/prepdata.cc` 
     - Creates new signal and background ROOT files with selected variables.
-2. Run `python Machine_Learning/Training/main.py`
+4. Run `python Machine_Learning/Training/main.py`
     - Trains model using preprocessed data 
     - Check which variables are being used for training in `Machine_Learning/Training/prepdata_v0.py`.
-3. Run `python Machine_Learning/Evaluation/evaluation.py`
+    - Careful to not overwrite checkpoints: make sure to change version name of the pth file saved. 
+5. Run `python Machine_Learning/Evaluation/evaluation.py`
     - Evaluates trained models with different loss functions.
 
 --- 

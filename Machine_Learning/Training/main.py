@@ -19,6 +19,9 @@ from early_stopping import EarlyStopping
 sns.set_style("darkgrid")
 
 def main():
+    # training options: "both", "balanced", "focal"
+    mode = "both" 
+
     try:
         dir = "Signal_vs_Background/ROOT_files"
         file_signal = "signal.root"
@@ -52,45 +55,60 @@ def main():
         val_loader = DataLoader(val_set, batch_size=32, shuffle=True)
         test_loader = DataLoader(test_set, batch_size=64, shuffle=False)
 
-        # Initialize the model
         input_size = x.shape[1]
-        B_model = ClassificationModel(input_size)
-        F_model = ClassificationModel(input_size)
 
         # Calculate class weights
         class_weights = torch.tensor([1 / np.sum(y == 0), 1 / np.sum( y == 1)], dtype=torch.float32)
         class_weights /= class_weights.sum()
 
-        # Define loss function and optimizer
-        B_criterion = BalancedLoss(alpha=class_weights)
-        F_criterion = FocalLoss(alpha=class_weights)
-        B_optimizer = optim.Adam(B_model.parameters(), lr=0.001)
-        F_optimizer = optim.Adam(F_model.parameters(), lr=0.001)
-
-        # Early stopping
-        B_early_stopping = EarlyStopping(patience=100, delta=1e-6)
-        F_early_stopping = EarlyStopping(patience=100, delta=1e-6)
-
-        # Train models
-        print("\nTraining model with Balanced Loss...")
-        train_model(B_model, B_early_stopping, train_loader, val_loader, B_criterion, B_optimizer, flag=0)
-
-        print("\nTraining model with Focal Loss...")
-        train_model(F_model, F_early_stopping, train_loader, val_loader, F_criterion, F_optimizer, flag=1)
-
-        # Save models
+        # Directory to save models
         checkpoint_dir = "Machine_Learning/Evaluation/checkpoints"
         os.makedirs(checkpoint_dir, exist_ok=True)
 
-        torch.save({"model_state_dict": B_model.state_dict(),
-                    "optimizer_state_dict": B_optimizer.state_dict(),
-                    "dataset": dataset,
-                    "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "B_model_checkpoint_v1.pth"))
-        
-        torch.save({"model_state_dict": F_model.state_dict(),
-                    "optimizer_state_dict": F_optimizer.state_dict(),
-                    "dataset": dataset,
-                    "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "F_model_checkpoint_v1.pth"))
+        if mode in ["both", "binary"]:
+
+            # Initialise model
+            B_model = ClassificationModel(input_size)
+
+            # Define loss function and optimizer
+            B_criterion = BalancedLoss(alpha=class_weights)
+            B_optimizer = optim.Adam(B_model.parameters(), lr=0.001)
+
+            # Early stopping
+            B_early_stopping = EarlyStopping(patience=100, delta=1e-6)
+
+            # Train model
+            print("\nTraining model with Balanced Loss...")
+            train_model(B_model, B_early_stopping, train_loader, val_loader, B_criterion, B_optimizer, num_epochs=600, flag=0)
+
+            # Save model
+            torch.save({"model_state_dict": B_model.state_dict(),
+                        "optimizer_state_dict": B_optimizer.state_dict(),
+                        "dataset": dataset,
+                        "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "B_model_checkpoint_v0.pth"))
+
+
+        if mode in ["both", "focal"]:
+
+            # Initialise model
+            F_model = ClassificationModel(input_size)
+
+            # Define loss function and optimizer
+            F_criterion = FocalLoss(alpha=class_weights)
+            F_optimizer = optim.Adam(F_model.parameters(), lr=0.001)
+
+            # Early stopping
+            F_early_stopping = EarlyStopping(patience=100, delta=1e-6)
+
+            # Train model
+            print("\nTraining model with Focal Loss...")
+            train_model(F_model, F_early_stopping, train_loader, val_loader, F_criterion, F_optimizer, num_epochs=600, flag=1)
+
+            # Save model
+            torch.save({"model_state_dict": F_model.state_dict(),
+                        "optimizer_state_dict": F_optimizer.state_dict(),
+                        "dataset": dataset,
+                        "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "F_model_checkpoint_v0.pth"))
         
     except Exception as e:
         print(f"An error occurred: {e}")
