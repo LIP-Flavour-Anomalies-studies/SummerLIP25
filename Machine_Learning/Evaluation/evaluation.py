@@ -47,19 +47,29 @@ def load_model(loss_type):
     return model, test_loader
 
 
-def calculate_metrics(predictions, targets):
+def calculate_metrics(predictions, targets,  weight_signal=1.0, weight_background=1.0):
 
-    tp = ((predictions == 1) & (targets == 1)).sum().item()
-    tn = ((predictions == 0) & (targets == 0)).sum().item()
-    fp = ((predictions == 1) & (targets == 0)).sum().item()
-    fn = ((predictions == 0) & (targets == 1)).sum().item()
+    weights = torch.where(targets == 1, weight_signal, weight_background)
 
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    tp = (((predictions == 1) & (targets == 1)).float() * weights).sum().item()
+    tn = (((predictions == 0) & (targets == 0)).float() * weights).sum().item()
+    fp = (((predictions == 1) & (targets == 0)).float() * weights).sum().item()
+    fn = (((predictions == 0) & (targets == 1)).float() * weights).sum().item()
+
+    total = tp + tn + fp + fn
+    accuracy = (tp + tn) / (total)
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
     f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
-    return accuracy, precision, recall, f1, np.array([[tp, fp], [fn, tn]])
+    # Confusion matrix (unweighted, for reference only)
+    raw_tp = ((predictions == 1) & (targets == 1)).sum().item()
+    raw_fp = ((predictions == 1) & (targets == 0)).sum().item()
+    raw_fn = ((predictions == 0) & (targets == 1)).sum().item()
+    raw_tn = ((predictions == 0) & (targets == 0)).sum().item()
+    conf_matrix = np.array([[raw_tp, raw_fp], [raw_fn, raw_tn]])
+
+    return accuracy, precision, recall, f1, conf_matrix
 
 
 def save_metrics(conf_matrix, accuracy, precision, recall, f1, best_thr, loss_type):
@@ -103,13 +113,15 @@ def save_metrics(conf_matrix, accuracy, precision, recall, f1, best_thr, loss_ty
     print(f"[{loss_type.upper()}] Evaluation metrics saved to {pdf_filename}")
 
 
-def calculate_fom_roc(probabilities, targets):
+def calculate_fom_roc(probabilities, targets, weight_signal=1.0, weight_background=1.0):
     """
     Calculate the ROC curve points and find the best threshold maximizing the figure of merit (FOM).
 
     Args:
         probabilities (torch.Tensor): Predicted probabilities for the positive class.
         targets (torch.Tensor): Ground truth labels (0 or 1).
+        weight_signal (float): Weight applied to signal (label=1).
+        weight_background (float): Weight applied to background (label=0).
 
     Returns:
         tuple: (fpr_list, tpr_list, auc, best_threshold, best_point)
@@ -126,16 +138,16 @@ def calculate_fom_roc(probabilities, targets):
     tpr_list = []
     fpr_list = []
 
-    total_signal = (targets == 1).sum().item()
-    total_background = (targets == 0).sum().item()
+    total_signal = ((targets == 1) * weight_signal).sum().item()
+    total_background = ((targets == 0) * weight_background).sum().item()
 
     if total_signal == 0 or total_background == 0:
         raise ValueError("Targets must contain both signal (1) and background (0) examples.")
 
     for thr in thresholds:
         predicted = (probabilities >= thr).float()
-        tp = ((predicted == 1) & (targets == 1)).sum().item()
-        fp = ((predicted == 1) & (targets == 0)).sum().item()
+        tp = (((predicted == 1) & (targets == 1)).float()).sum().item() * weight_signal
+        fp = (((predicted == 1) & (targets == 0)).float()).sum().item() * weight_background
 
         fom = tp / np.sqrt(tp + fp) if (tp + fp) > 0 else 0
         tpr = tp / total_signal
