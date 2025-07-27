@@ -2,13 +2,18 @@
 Data loading code to prep for ML.
 Teresa 12/07/2025
 """
-
+import sys
+import os
 import uproot
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-def prepdata(dir_path, root_mc, root_data):
+# Add the directory containing variables
+sys.path.append(os.path.abspath("Machine_Learning"))
+from variable_versions import load_variables
+
+def prepdata(dir_path, root_mc, root_data, version):
     """
     Load ROOT file, extract features and labels from two trees (signal and background),
     and prepare numpy arrays for training.
@@ -38,10 +43,8 @@ def prepdata(dir_path, root_mc, root_data):
     tree_background = file_back["Tback"]
 
     # List of variables to extract (features)
-    variables = ["bVtxCL", "kstTMass", "bCosAlphaBS", "bLBSs",
-            "bDCABSs", "kstTrkmDCABSs", "kstTrkpDCABSs",
-            "muLeadingPt", "muTrailingPt"]
-
+    variables = load_variables(version)
+    
     # Load features as numpy arrays from ROOT trees
     signal_arrays = tree_signal.arrays(variables, library="np")
     background_arrays = tree_background.arrays(variables, library="np")

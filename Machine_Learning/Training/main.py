@@ -26,8 +26,10 @@ def main():
         dir = "Signal_vs_Background/ROOT_files"
         file_signal = "signal.root"
         file_back = "background.root"
+        # Choose training version
+        version = 1
 
-        x, y = prepdata(dir, file_signal, file_back)
+        x, y = prepdata(dir, file_signal, file_back, version)
         dataset = ClassificationDataset(x, y)
 
         # Stratified splitting to keep class proportions
@@ -79,13 +81,13 @@ def main():
 
             # Train model
             print("\nTraining model with Balanced Loss...")
-            train_model(B_model, B_early_stopping, train_loader, val_loader, B_criterion, B_optimizer, num_epochs=600, flag=0)
+            train_model(B_model, B_early_stopping, train_loader, val_loader, B_criterion, B_optimizer, num_epochs=700, flag=0)
 
             # Save model
             torch.save({"model_state_dict": B_model.state_dict(),
                         "optimizer_state_dict": B_optimizer.state_dict(),
                         "dataset": dataset,
-                        "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "B_model_checkpoint_v0.pth"))
+                        "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, f"B_model_checkpoint_v{version}.pth"))
 
 
         if mode in ["both", "focal"]:
@@ -102,13 +104,13 @@ def main():
 
             # Train model
             print("\nTraining model with Focal Loss...")
-            train_model(F_model, F_early_stopping, train_loader, val_loader, F_criterion, F_optimizer, num_epochs=600, flag=1)
+            train_model(F_model, F_early_stopping, train_loader, val_loader, F_criterion, F_optimizer, num_epochs=700, flag=1)
 
             # Save model
             torch.save({"model_state_dict": F_model.state_dict(),
                         "optimizer_state_dict": F_optimizer.state_dict(),
                         "dataset": dataset,
-                        "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, "F_model_checkpoint_v0.pth"))
+                        "test_set": test_loader.dataset}, os.path.join(checkpoint_dir, f"F_model_checkpoint_v{version}.pth"))
         
     except Exception as e:
         print(f"An error occurred: {e}")

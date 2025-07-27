@@ -11,7 +11,9 @@ Flavour Anomalies Internship project focusing on preparing data from Monte Carlo
 |-------------------------|--------------------------------------------------------------|
 | `InitialAnalysis/`                                      | Contains early data exploration. |
 | `bMass.cc`, `bMass_data.cc`, `bMass_mc.cc`, `ntuple.cc` | C++ source files for ROOT-based mass fitting and data preparation. |
-| `Machine_Learning/`                                     | Core ML pipeline: <br>• `Training/` – training scripts and configs <br>• `Evaluation/` – scripts to evaluate trained models. |
+| `Machine_Learning/`                                     | Core ML pipeline: <br>• `Training/` – training scripts and configs <br>• `Evaluation/` – scripts to evaluate trained models <br>•`Data_Application/` - scripts to apply trained models |
+| `variable_versions.json`                                | File containing map to different training versions and corresponding input features|
+| `variable_versions.py`                                  | Loads variables used for training according to version                      |
 | `Evaluation/`                                           | Evaluation results, plots, and post-training analyses. |
 | `checkpoints/`                                          | Saved model weights from training (e.g., best/last checkpoints). |
 | `B_evaluation.py`, `F_evaluation.py`, `evaluation.py`   | Evaluate models with different loss functions. |
@@ -79,15 +81,23 @@ pip install -r requirements.txt
 3. Run `root Signal_vs_Background/prepdata.cc` 
     - Creates new signal and background ROOT files with selected variables.
 4. Run `python Machine_Learning/Training/main.py`
-    - Trains model using preprocessed data 
-    - Check which variables are being used for training in `Machine_Learning/Training/prepdata_v0.py`.
-    - Careful to not overwrite checkpoints: make sure to change version name of the pth file saved. 
+    - Trains model using preprocessed data.
+    - Check which variables are being used for training by choosing version number.
 5. Run `python Machine_Learning/Evaluation/evaluation.py`
     - Evaluates trained models with different loss functions.
+    - Computes best threshold based on Youden J's statistic (as a working point).
+    - Choose which version to be evaluated in `main()`.
+6. Run `root Machine_Learning/Data_Application/ROOTvar.cc`
+    - Prepares files to apply trained models on full datasets.
+    - Keeps only signal events and writes them to a ROOT file (for bMass).
+7. Run `python Machine_Learning/Data_Application/weights.py`
+    - Computes scaling weights to use in FoM.
+8. Run `python Machine_Learning/Data_Application/FoM.py`
+    - Determines new best threshold based on FoM maximisation.
 
 --- 
 
-## Contribution and Collaboration Workflow
+## Contribution
 
 #### Working on a New Branch
 ```bash
