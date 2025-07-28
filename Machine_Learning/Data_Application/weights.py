@@ -2,6 +2,8 @@
 Module to compute weights to scale FoM.
 Teresa 27/07/2025
 """
+import ROOT
+from ROOT import RooRealVar, RooDataSet, RooArgSet, RooExponential, RooFit, TCanvas, TLine
 import uproot
 import numpy as np
 import json
@@ -21,13 +23,57 @@ def get_arrays(path, versions):
 
     return arrays
 
+def estimate_Np(mass_values, peak_range=(5.15, 5.4), fit_range=(5.0, 5.6), draw_fit=True):
+
+    s_left, s_right = peak_range
+    mmin, mmax = fit_range
+
+    # Define RooRealVar
+    mass = RooRealVar("mass", "bTMass", mmin, mmax, "GeV/c^{2}")
+
+    # Define sideband ranges
+    mass.setRange("left_sb", mmin, s_left)
+    mass.setRange("right_sb", s_right, mmax)
+    mass.setRange("sidebands", mmin, s_left)
+    mass.setRange("sidebands", s_right, mmax)
+    mass.setRange("peak", s_left, s_right)
+    mass.setRange("fit", mmin, mmax)
+
+    # Prepare RooDataSet with only sideband data
+    ds = RooDataSet("ds", "sideband data", RooArgSet(mass))
+    for val in mass_values:
+        # Only add points in sidebands for fitting
+        if (mmin <= val <= s_left) or (s_right <= val <= mmax):
+            mass.setVal(val)
+            ds.add(RooArgSet(mass))
+
+    # Background model (exponential)
+    Lambda = RooRealVar("lambda", "lambda", -1.0, -10.0, 0.0)
+    background = RooExponential("background", "Background", mass, Lambda)
+
+    # Number of background events (floating)
+    n_back = RooRealVar("n_back", "n_back", ds.sumEntries(), 0, 1.5 * ds.sumEntries())
+
+    # Extended PDF
+    extended_bkg = ROOT.RooExtendPdf("extended_bkg", "extended background pdf", background, n_back)
+
+    # Fit only in sidebands range
+    fit_result = extended_bkg.fitTo(ds, RooFit.Range("sidebands"), RooFit.Save(), RooFit.PrintLevel(-1))
+
+    # Estimate background in peak region by integration
+    integral_peak = background.createIntegral(RooArgSet(mass), RooFit.Range("peak")).getVal()
+    integral_sidebands = background.createIntegral(RooArgSet(mass), RooFit.Range("sidebands")).getVal()
+
+    Np_est = n_back.getVal() * (integral_peak / integral_sidebands)
+
+    return Np_est
 
 def compute_weights(data_path, mc_path, versions):
     
     # sidebands
     s_left = 5.15
     s_right = 5.4
-    # Assume 1% of Np is signal
+    # Assume signal is twice of Np
     frac = 2
 
     data_arrays = get_arrays(data_path, versions)
@@ -43,8 +89,10 @@ def compute_weights(data_path, mc_path, versions):
 
         N_l = np.sum(data_array < s_left)
         N_h = np.sum(data_array > s_right)
-        N_p = np.sum((data_array <= s_right) & (data_array >= s_left))
 
+        # Estimate background in peak using RooFit on sidebands
+        N_p = estimate_Np(data_array, peak_range=(s_left, s_right))
+    
         # Background fraction in the peak (to scale MC bkg)
         w_B = N_p / (N_h + N_l)
         
@@ -66,7 +114,7 @@ def save_weights(weights, save_dir):
 
 def main():
 
-    versions = [1, 2, 3]
+    versions = [1] #[1, 2, 3]
     loss_type = "binary"
 
     data_path = f"Machine_Learning/Data_Application/ROOT/bTMass_{loss_type}.root"

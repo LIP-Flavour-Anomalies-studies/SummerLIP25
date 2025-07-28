@@ -45,14 +45,23 @@ def prepdata_for_application(file_path, tree_name="Tdata", version=None):
 
     return X
 
-def load_threshold(loss_type, version):
+def load_threshold(loss_type, version, fom_flag=0):
 
-    if loss_type == "focal":
-        thr_path = "Machine_Learning/Data_Application/thresholds/focal_thresholds.json"
-    elif loss_type == "binary":
-        thr_path = "Machine_Learning/Data_Application/thresholds/binary_thresholds.json"
-    else:
-        raise ValueError("Invalid loss type. Use 'focal' or 'binary'.")
+    # use youden thresholds
+    if fom_flag == 0:
+        if loss_type == "focal":
+            thr_path = "Machine_Learning/Data_Application/thresholds/focal_thresholds.json"
+        elif loss_type == "binary":
+            thr_path = "Machine_Learning/Data_Application/thresholds/binary_thresholds.json"
+        else:
+            raise ValueError("Invalid loss type. Use 'focal' or 'binary'.")
+    elif fom_flag == 1:
+        if loss_type == "focal":
+            thr_path = "Machine_Learning/Data_Application/thresholds/FoM_focal_thresholds.json"
+        elif loss_type == "binary":
+            thr_path = "Machine_Learning/Data_Application/thresholds/FoM_binary_thresholds.json"
+        else:
+            raise ValueError("Invalid loss type. Use 'focal' or 'binary'.")
 
     with open(thr_path, 'r') as f:
         data = json.load(f)
@@ -65,7 +74,7 @@ def load_threshold(loss_type, version):
     return thr
 
 
-def model_application(file_path, loss_type, version):
+def model_application(file_path, loss_type, version, fom_flag=0):
     """
     Apply trained model on full dataset.
 
@@ -106,12 +115,12 @@ def model_application(file_path, loss_type, version):
         probabilities = outputs.squeeze().numpy()
     
     # Apply threshold
-    best_thr = load_threshold(loss_type, version)
+    best_thr = load_threshold(loss_type, version, fom_flag)
     labels = (probabilities >= best_thr).astype(int)
 
     return labels, probabilities
 
-def save_signal_events(input_file, output_file, loss_type, versions, tree_name='Tdata'):
+def save_signal_events(input_file, output_file, loss_type, versions, fom_flag=0, tree_name='Tdata'):
     """
     Applies trained model to dataset, keeps only signal events (label==1),
     and writes them to a new ROOT file.
@@ -138,7 +147,7 @@ def save_signal_events(input_file, output_file, loss_type, versions, tree_name='
     filtered_arrays = {}
     for version in versions:
         # Load data and apply model
-        labels, probabilities = model_application(input_file, loss_type, version)
+        labels, probabilities = model_application(input_file, loss_type, version, fom_flag)
         # Filter events where predicted label == 1
         mask = (labels == 1)
         filtered_arrays[f"bTMass_v{version}"] = arrays["bTMass"][mask]
@@ -153,15 +162,21 @@ def save_signal_events(input_file, output_file, loss_type, versions, tree_name='
 
 def main():
     loss_type = "binary" # or "focal"
+
     input_data = "Machine_Learning/Data_Application/ROOT/data_selected.root"
     output_data = f"Machine_Learning/Data_Application/ROOT/bTMass_{loss_type}.root"
+    fom_output_data = f"Machine_Learning/Data_Application/ROOT/FoM_bTMass_{loss_type}.root"
     input_mc = "Machine_Learning/Data_Application/ROOT/mc_selected.root"
     output_mc = f"Machine_Learning/Data_Application/ROOT/bTMass_mc_{loss_type}.root"
+    fom_output_mc = f"Machine_Learning/Data_Application/ROOT/FoM_bTMass_mc_{loss_type}.root"
     
-    versions = [1, 2, 3]
+    versions = [1] #[1, 2, 3]
 
     save_signal_events(input_data, output_data, loss_type, versions)
     save_signal_events(input_mc, output_mc, loss_type, versions)
+
+    #save_signal_events(input_data, fom_output_data, loss_type, versions, fom_flag=1)
+    #save_signal_events(input_mc, fom_output_mc, loss_type, versions, fom_flag=1)
 
 if __name__ == '__main__':
     main()

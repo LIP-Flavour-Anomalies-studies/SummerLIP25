@@ -299,7 +299,7 @@ def main():
     for loss_type in ["focal", "binary"]:
         try:
             # Choose version
-            version = 4
+            version = 1
             # Save evaluations files
             version_dir = None
             if version is not None:

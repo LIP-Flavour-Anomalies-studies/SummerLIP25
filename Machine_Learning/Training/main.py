@@ -19,7 +19,7 @@ from early_stopping import EarlyStopping
 sns.set_style("darkgrid")
 
 def main():
-    # training options: "both", "balanced", "focal"
+    # training options: "both", "binary", "focal"
     mode = "both" 
 
     try:
@@ -81,7 +81,7 @@ def main():
 
             # Train model
             print("\nTraining model with Balanced Loss...")
-            train_model(B_model, B_early_stopping, train_loader, val_loader, B_criterion, B_optimizer, num_epochs=700, flag=0)
+            train_model(B_model, B_early_stopping, train_loader, val_loader, B_criterion, B_optimizer, num_epochs=500, flag=0)
 
             # Save model
             torch.save({"model_state_dict": B_model.state_dict(),
@@ -104,7 +104,7 @@ def main():
 
             # Train model
             print("\nTraining model with Focal Loss...")
-            train_model(F_model, F_early_stopping, train_loader, val_loader, F_criterion, F_optimizer, num_epochs=700, flag=1)
+            train_model(F_model, F_early_stopping, train_loader, val_loader, F_criterion, F_optimizer, num_epochs=500, flag=1)
 
             # Save model
             torch.save({"model_state_dict": F_model.state_dict(),
