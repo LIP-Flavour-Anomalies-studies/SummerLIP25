@@ -4,13 +4,16 @@
 #include <string>
 #include "TFile.h"
 #include "TTree.h"
-#include "TH1D.h"
-#include "TCanvas.h"
-#include "TLegend.h"
+#include <filesystem>
 
 using namespace std;
+namespace fs = std::filesystem;
+
 
 void prepdata(){
+
+    // Create output directory if it doesn't exist
+    fs::create_directories("Signal_vs_Background/ROOT_files");
 
     // --- Open Files and Get Trees ---
     TFile *f_data = new TFile("/lstore/cms/boletti/Run3-ntuples/ntuple2_flat_LMNR_PostRefitMomenta_test_2022F_skimSoftMu_1.root", "read");
