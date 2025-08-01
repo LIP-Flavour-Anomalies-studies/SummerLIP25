@@ -8,22 +8,33 @@ import uproot
 import numpy as np
 import json
 
-def get_arrays(path, versions):
+def get_signal_arrays(path, versions, loss_type, tree_name="Tdata"):
     """
-    Load bTMass arrays from a ROOT file for given versions.
+    Load bTMass values after ML score > threshold cut for each version.
     """
 
     file = uproot.open(path)
-    arrays = []
+    tree = file[tree_name]
+
+    signal_arrays = []
 
     for version in versions:
-        tree = file[f"bTMass_v{version}"]
-        array = tree.arrays("bTMass", library="np")["bTMass"]
-        arrays.append(array)
+        score_branch = f"{loss_type[0].upper()}_score_v{version}"
+        thr_branch = f"{loss_type[0].upper()}thr_v{version}"
 
-    return arrays
+        arrays = tree.arrays(["bTMass", score_branch, thr_branch], library="np")
 
-def estimate_Np(mass_values, peak_range=(5.15, 5.4), fit_range=(5.0, 5.6), draw_fit=True):
+        bTMass = arrays["bTMass"]
+        score = arrays[score_branch]
+        thr = arrays[thr_branch]
+        
+        # Apply cut
+        mask = score >= thr
+        signal_arrays.append(bTMass[mask])
+
+    return signal_arrays
+
+def estimate_Np(mass_values, peak_range=(5.15, 5.4), fit_range=(5.0, 5.6)):
 
     s_left, s_right = peak_range
     mmin, mmax = fit_range
@@ -68,7 +79,7 @@ def estimate_Np(mass_values, peak_range=(5.15, 5.4), fit_range=(5.0, 5.6), draw_
 
     return Np_est
 
-def compute_weights(data_path, mc_path, versions):
+def compute_weights(data_path, mc_path, versions, loss_type):
     
     # sidebands
     s_left = 5.15
@@ -76,8 +87,8 @@ def compute_weights(data_path, mc_path, versions):
     # Assume signal is twice of Np
     frac = 2
 
-    data_arrays = get_arrays(data_path, versions)
-    mc_arrays = get_arrays(mc_path, versions)
+    data_arrays = get_signal_arrays(data_path, versions, loss_type)
+    mc_arrays = get_signal_arrays(mc_path, versions, loss_type)
 
     weights = {}
 
@@ -114,14 +125,14 @@ def save_weights(weights, save_dir):
 
 def main():
 
-    versions = [1] #[1, 2, 3]
+    versions = [0, 1, 2, 3, 4, 5]
     loss_type = "binary"
 
-    data_path = f"Machine_Learning/Data_Application/ROOT/bTMass_{loss_type}.root"
-    mc_path = f"Machine_Learning/Data_Application/ROOT/bTMass_mc_{loss_type}.root"
+    data_path = f"Machine_Learning/Data_Application/ROOT/data_selected_ml_output.root"
+    mc_path = f"Machine_Learning/Data_Application/ROOT/mc_selected_ml_output.root"
     
 
-    weights = compute_weights(data_path, mc_path, versions)
+    weights = compute_weights(data_path, mc_path, versions, loss_type)
     save_weights(weights, f"Machine_Learning/Data_Application/weights/weights_{loss_type}.json")
     
 if __name__ == '__main__':

@@ -89,11 +89,14 @@ pip install -r requirements.txt
     - Choose which version to be evaluated in `main()`.
 6. Run `root Machine_Learning/Data_Application/ROOTvar.cc`
     - Prepares files to apply trained models on full datasets.
-    - Keeps only signal events and writes them to a ROOT file (for bMass).
-7. Run `python Machine_Learning/Data_Application/weights.py`
+7. Run `python Machine_Learning/Data_Application/apply_model.py`
+    - Applies model to full dataset
+    - Saves ML output and best thr as new branches in the ROOT file.
+8. Run `python Machine_Learning/Data_Application/weights.py`
     - Computes scaling weights to use in FoM.
-8. Run `python Machine_Learning/Data_Application/FoM.py`
+9. Run `python Machine_Learning/Data_Application/FoM.py`
     - Determines new best threshold based on FoM maximisation.
+10. Apply model again to save thresholds after FoM as new branches in ROOT file.
 
 --- 
 

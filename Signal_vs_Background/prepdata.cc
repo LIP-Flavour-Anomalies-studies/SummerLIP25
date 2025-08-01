@@ -45,7 +45,8 @@ void prepdata(){
         "kstTrkpPt", "kstTrkpPhi",  "kstTrkpEta", "kstTrkpDCABS", "kstTrkpDCABSE",
         "mumPt", "mumPhi", "mumEta", 
         "mupPt", "mupPhi", "mupEta",
-        "tagB0", "bCosAlphaBS", "bLBS", "bLBSE", "bDCABS", "bDCABSE"
+        "tagB0", "bCosAlphaBS", "bLBS", "bLBSE", "bDCABS", "bDCABSE",
+        "mumIsoPt_dr04", "mupIsoPt_dr04", "kstTrkmIsoPt_dr04", "kstTrkpIsoPt_dr04"
     };
 
     // variables to upload in files 
@@ -62,7 +63,10 @@ void prepdata(){
         "bLBSs", "bDCABSs",
         "kstTrkmDCABSs", "kstTrkpDCABSs",
         "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR",
-        "mumuPtR", "kstPtR"
+        "mumuPtR", "kstPtR",
+        "mumIsoPt_dr04", "mupIsoPt_dr04", "kstTrkmIsoPt_dr04", "kstTrkpIsoPt_dr04",
+        "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04",
+        "IsoPtR_dr04_sum"
 	};
 
     // newly created variables (not previously in the file)
@@ -72,7 +76,9 @@ void prepdata(){
         "bLBSs", "bDCABSs",
         "kstTrkmDCABSs", "kstTrkpDCABSs",
         "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR",
-        "mumuPtR", "kstPtR"
+        "mumuPtR", "kstPtR",
+        "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04",
+        "IsoPtR_dr04_sum"
     };
 
     // variables for matching
@@ -160,7 +166,28 @@ void prepdata(){
                 vars_background["muTrailingPtR"] = vars_data["muTrailingPt"] / vars_data["bPt"];
                 vars_background["mumuPtR"] = vars_data["mumuPt"] / vars_data["bPt"];
                 vars_background["kstPtR"] = vars_data["kstPt"] / vars_data["bPt"];
-            } 
+            }
+
+            // relative isolation variables
+            if (vars_data["mupPt"] != 0){
+                vars_background["mupIsoPtR_dr04"] = vars_data["mupIsoPt_dr04"] / vars_data["mupPt"];
+            }
+
+            if (vars_data["mumPt"] != 0){
+                vars_background["mumIsoPtR_dr04"] = vars_data["mumIsoPt_dr04"] / vars_data["mumPt"];
+            }
+
+            if (vars_data["kstTrkpPt"] != 0){
+                vars_background["kstTrkpIsoPtR_dr04"] = vars_data["kstTrkpIsoPt_dr04"] / vars_data["kstTrkpPt"];
+            }
+
+            if (vars_data["kstTrkmPt"] != 0){
+                vars_background["kstTrkmIsoPtR_dr04"] = vars_data["kstTrkmIsoPt_dr04"] / vars_data["kstTrkmPt"];
+            }
+
+            vars_background["IsoPtR_dr04_sum"] = vars_background["kstTrkmIsoPtR_dr04"] + vars_background["kstTrkpIsoPtR_dr04"] +
+                                                vars_background["mumIsoPtR_dr04"] + vars_background["mupIsoPtR_dr04"];
+
 
             t_background->Fill();
         }  
@@ -226,6 +253,26 @@ void prepdata(){
                 vars_signal["mumuPtR"] = vars_mc["mumuPt"] / vars_mc["bPt"];
                 vars_signal["kstPtR"] = vars_mc["kstPt"] / vars_mc["bPt"];
             } 
+
+            // relative isolation variables
+            if (vars_mc["mupPt"] != 0){
+                vars_signal["mupIsoPtR_dr04"] = vars_mc["mupIsoPt_dr04"] / vars_mc["mupPt"];
+            }
+
+            if (vars_mc["mumPt"] != 0){
+                vars_signal["mumIsoPtR_dr04"] = vars_mc["mumIsoPt_dr04"] / vars_mc["mumPt"];
+            }
+
+            if (vars_mc["kstTrkpPt"] != 0){
+                vars_signal["kstTrkpIsoPtR_dr04"] = vars_mc["kstTrkpIsoPt_dr04"] / vars_mc["kstTrkpPt"];
+            }
+
+            if (vars_mc["kstTrkmPt"] != 0){
+                vars_signal["kstTrkmIsoPtR_dr04"] = vars_mc["kstTrkmIsoPt_dr04"] / vars_mc["kstTrkmPt"];
+            }
+
+            vars_signal["IsoPtR_dr04_sum"] = vars_signal["kstTrkmIsoPtR_dr04"] + vars_signal["kstTrkpIsoPtR_dr04"] +
+                                                vars_signal["mumIsoPtR_dr04"] + vars_signal["mupIsoPtR_dr04"];
 
             t_signal->Fill();
         }  
