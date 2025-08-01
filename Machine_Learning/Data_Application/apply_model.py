@@ -55,6 +55,7 @@ def load_threshold(loss_type, version, fom_flag=0):
             thr_path = "Machine_Learning/Data_Application/thresholds/binary_thresholds.json"
         else:
             raise ValueError("Invalid loss type. Use 'focal' or 'binary'.")
+    # use fom thresholds
     elif fom_flag == 1:
         if loss_type == "focal":
             thr_path = "Machine_Learning/Data_Application/thresholds/FoM_focal_thresholds.json"
@@ -120,63 +121,71 @@ def model_application(file_path, loss_type, version, fom_flag=0):
 
     return labels, probabilities
 
-def save_signal_events(input_file, output_file, loss_type, versions, fom_flag=0, tree_name='Tdata'):
+def save_outputs(input_file, loss_type, versions, fom_flag=0, tree_name='Tdata'):
     """
-    Applies trained model to dataset, keeps only signal events (label==1),
-    and writes them to a new ROOT file.
+    Applies trained model to dataset and saves the ML output scores and thresholds
+    as new branches to the existing ROOT file.
 
     Parameters:
         input_file : str
             Path to input ROOT file.
-        output_file : str
-            Path to output ROOT file (signal events only).
-        tree_name : str
-            Name of the TTree in the ROOT file.
         loss_type : str
             Loss function used during training ('focal' or 'binary').
-        version : str or int
-            Model version to load.
+        versions : list of int
+            Model versions to apply.
+        fom_flag : int
+            Whether to use FoM-optimized thresholds.
+        tree_name : str
+            Name of the TTree in the ROOT file.
     """
     
     # Open original ROOT file and read all branches into numpy arrays
     file = uproot.open(input_file)
     tree = file[tree_name]
-    arrays = tree.arrays("bTMass",library="np")
+    arrays = tree.arrays(library="np")
+    num_entries = len(arrays["bTMass"])
 
 
-    filtered_arrays = {}
+    new_branches = {}
     for version in versions:
         # Load data and apply model
         labels, probabilities = model_application(input_file, loss_type, version, fom_flag)
-        # Filter events where predicted label == 1
-        mask = (labels == 1)
-        filtered_arrays[f"bTMass_v{version}"] = arrays["bTMass"][mask]
+        thr = load_threshold(loss_type, version, fom_flag)
 
+        # Save model output and threshold as new branches
+        new_branches[f"{loss_type[0].upper()}_score_v{version}"] = probabilities
+        new_branches[f"{loss_type[0].upper()}_thr_v{version}"] = np.full_like(probabilities, thr, dtype=np.float32)
 
-    # Save filtered bTMass arrays into one ROOT file 
+    # Merge new and old branches
+    all_branches = arrays.copy()
+    all_branches.update(new_branches)
+
+    # Overwrite or create new file with updated tree
+    if fom_flag == 0:
+        output_file = input_file.replace(".root", f"_mlJ_output.root")
+    elif fom_flag == 1:
+        output_file = input_file.replace(".root", f"_mlFoM_output.root")
+    
     new_file = uproot.recreate(output_file)
+    branch_types = {key: val.dtype for key, val in all_branches.items()}
+    new_file.mktree(tree_name, branch_types)
+    new_file[tree_name].extend(all_branches)
 
-    for tree, bTMass_array in filtered_arrays.items():
-        new_file.mktree(tree, {"bTMass": bTMass_array.dtype})
-        new_file[tree].extend({"bTMass": bTMass_array})
 
 def main():
     loss_type = "binary" # or "focal"
 
     input_data = "Machine_Learning/Data_Application/ROOT/data_selected.root"
-    output_data = f"Machine_Learning/Data_Application/ROOT/bTMass_{loss_type}.root"
-    fom_output_data = f"Machine_Learning/Data_Application/ROOT/FoM_bTMass_{loss_type}.root"
     input_mc = "Machine_Learning/Data_Application/ROOT/mc_selected.root"
-    output_mc = f"Machine_Learning/Data_Application/ROOT/bTMass_mc_{loss_type}.root"
-    fom_output_mc = f"Machine_Learning/Data_Application/ROOT/FoM_bTMass_mc_{loss_type}.root"
     
-    versions = [1] #[1, 2, 3]
+    versions = [0, 1, 2, 3, 4, 5] 
 
-    save_signal_events(input_data, output_data, loss_type, versions)
-    save_signal_events(input_mc, output_mc, loss_type, versions)
+    save_outputs(input_data, loss_type, versions)
+    save_outputs(input_mc, loss_type, versions)
 
-    #save_signal_events(input_data, fom_output_data, loss_type, versions, fom_flag=1)
-    #save_signal_events(input_mc, fom_output_mc, loss_type, versions, fom_flag=1)
+    # Optional: also add FoM-thresholded branches
+    save_outputs(input_data, loss_type, versions, fom_flag=1)
+    save_outputs(input_mc, loss_type, versions, fom_flag=1)
 
 if __name__ == '__main__':
     main()

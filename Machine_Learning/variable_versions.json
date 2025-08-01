@@ -1,6 +1,5 @@
 {
-  "0": ["bVtxCL", "kstTMass", "bCosAlphaBS", "bLBSs", "bDCABSs", "kstTrkpDCABSs", "kstTrkmDCABSs",
-        "kstPt", "kstPhi", "kstEta", "muLeadingPt", "muTrailingPt"],
+  "0": ["bVtxCL", "kstTMass", "bCosAlphaBS", "bLBSs", "bDCABSs", "kstTrkpDCABSs", "kstTrkmDCABSs"],
 
   "1": ["bVtxCL", "kstTMass", "bCosAlphaBS", "bLBSs", "bDCABSs", "kstTrkpDCABSs", "kstTrkmDCABSs",
         "muLeadingPt", "muTrailingPt"],
@@ -12,5 +11,8 @@
         "muLeadingPtR", "muTrailingPtR", "kstTrkpPtR", "kstTrkmPtR"],
 
   "4": ["muLeadingPtR", "muTrailingPtR", "kstTrkpPtR", "kstTrkmPtR",
-        "muLeadingPt", "muTrailingPt", "kstTrkpPt", "kstTrkmPt"]
+        "muLeadingPt", "muTrailingPt", "kstTrkpPt", "kstTrkmPt"],
+
+  "5": ["bVtxCL", "kstTMass", "bCosAlphaBS", "bLBSs", "bDCABSs", "kstTrkpDCABSs", "kstTrkmDCABSs",
+        "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04"]
 }
