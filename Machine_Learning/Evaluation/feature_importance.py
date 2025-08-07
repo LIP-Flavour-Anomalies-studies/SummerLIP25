@@ -5,6 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 import torch.serialization
+import shap
+from captum.attr import IntegratedGradients
+import torch.nn as nn
 
 # Add path to import variable_versions.py from one level up
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -18,6 +21,22 @@ from prepdata_v0 import ClassificationDataset
 from prepdata_v0 import prepdata
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
+
+class LegacyModel(nn.Module):
+    """
+    Simpler version of the model used in older checkpoints.
+    Architecture:
+    - One fully connected layer (fc) with sigmoid activation
+	(used so I wouldn't have to change models.py)
+    """
+    def __init__(self, input_size):
+        super(LegacyModel, self).__init__()
+        self.fc = nn.Linear(input_size, 1)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        return self.sigmoid(self.fc(x))
 
 
 @torch.no_grad()
@@ -66,18 +85,53 @@ def compute_permutation_importance(model, val_loader, variable_list, device):
     # Sort features by importance (largest drop first)
     return sorted(importances, key=lambda x: x[1], reverse=True)
 
+def compute_shap_importance(model, val_loader, variable_list, device):
+    """
+    Computes SHAP (SHapley Additive exPlanations) feature importances.
 
-def run_feature_importance(version, loss_type='balanced'):
+    This method:
+        - Uses KernelExplainer to estimate Shapley values for each feature
+        - Measures the average absolute SHAP value per feature
+        - Higher SHAP value = more impact on model prediction
+
+    Returns a list of (feature_name, importance), sorted descending.
+    """
+    model.eval()
+
+    # Prepare a sample of validation data
+    X_all = []
+    for inputs, _ in val_loader:
+        X_all.append(inputs)
+    X_all = torch.cat(X_all).to(device)
+
+    def model_fn(x):
+        x_tensor = torch.tensor(x, dtype=torch.float32).to(device)
+        return model(x_tensor).detach().cpu().numpy()
+
+    background = X_all[:100].cpu().numpy()  # small subset as background
+    explainer = shap.KernelExplainer(model_fn, background)
+    shap_values = explainer.shap_values(X_all[:200].cpu().numpy())  # subset to reduce cost
+
+    # Compute mean absolute SHAP value for each feature
+    mean_abs_shap = np.abs(shap_values).mean(axis=0)
+    results = list(zip(variable_list, [float(val) for val in mean_abs_shap]))
+
+    return sorted(results, key=lambda x: x[1], reverse=True)
+
+def run_feature_importance(version, loss_type='binary', method='permutation'):
     """
     Loads model and validation data for a given version and loss function,
-    computes permutation feature importance, and saves the results.
+    computes feature importance using the selected method, and saves the results.
 
     Args:
         version (int): Variable version to use (as defined in variable_versions.json)
-        loss_type (str): Either 'balanced' or 'focal', to choose model checkpoint
+        loss_type (str): Either 'binary' or 'focal', to choose model checkpoint
+        method (str): 'permutation', 'shap'
     """
     # Go to project root directory
-    os.chdir("../../")
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    os.chdir(root_dir)
+
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -85,11 +139,17 @@ def run_feature_importance(version, loss_type='balanced'):
     variable_list = load_variables(version, config_path="Machine_Learning/variable_versions.json")
 
     # Select checkpoint suffix based on loss type
-    suffix = "B" if loss_type == "balanced" else "F"
+    suffix = "B" if loss_type == "binary" else "F"
     checkpoint_path = os.path.join("Machine_Learning", "Evaluation", "checkpoints", f"{suffix}_model_checkpoint_v{version}.pth")
 
     # Load model and weights
-    model = ClassificationModel(input_size=len(variable_list)).to(device)
+    # Use older or newer model architecture based on version:
+    # Versions 0, 2, 4 used an older model (1-layer), others use the current 2-layer model
+    if version in [ 2, 3, 4]:
+        model = LegacyModel(input_size=len(variable_list)).to(device)
+    else:
+        model = ClassificationModel(input_size=len(variable_list)).to(device)
+
     with torch.serialization.safe_globals([ClassificationDataset]):
         checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["model_state_dict"])
@@ -112,29 +172,51 @@ def run_feature_importance(version, loss_type='balanced'):
     val_data = ClassificationDataset(x_val, y_val)
     val_loader = DataLoader(val_data, batch_size=1024, shuffle=False)
 
-    # Compute permutation importance
-    results = compute_permutation_importance(model, val_loader, variable_list, device)
-
-    # Save results
-    outdir = f"Machine_Learning/Evaluation/v{version}/feature_importance"
+    # Choose importance method
+    if method == 'permutation':
+        results = compute_permutation_importance(model, val_loader, variable_list, device)
+    elif method == 'shap':
+        results = compute_shap_importance(model, val_loader, variable_list, device)
+    else:
+        raise ValueError(f"Unknown method: {method}")
+    # Define output directory using version + method + loss
+    outdir = f"Machine_Learning/Evaluation/version{version}_{method}_{loss_type}/feature_importance"
     os.makedirs(outdir, exist_ok=True)
 
-    # Save as JSON
-    with open(os.path.join(outdir, "permutation_importance.json"), "w") as f:
+# Save results as JSON
+    with open(os.path.join(outdir, f"{method}_importance.json"), "w") as f:
         json.dump(results, f, indent=2)
 
-    # Save as bar plot (PDF)
+    # Save plot
     vars_, scores = zip(*results)
     plt.figure(figsize=(10, 6))
     plt.barh(vars_, scores)
-    plt.xlabel("Drop in F1 Score")
-    plt.title(f"Permutation Importance (v{version}, {loss_type})")
+    plt.xlabel("Importance Score")
+    plt.title(f"{method.replace('_', ' ').title()} (v{version}, {loss_type})")
     plt.gca().invert_yaxis()
     plt.tight_layout()
-    plt.savefig(os.path.join(outdir, "permutation_importance.pdf"))
+    plt.savefig(os.path.join(outdir, f"{method}_importance.pdf"))
     plt.close()
 
 
 if __name__ == "__main__":
-    run_feature_importance(version=0, loss_type='balanced')  # Change version/loss_type here
+    for version in [0,1, 2, 3, 4, 5]:
+        for method in ['permutation', 'shap']:
+            print(f"\nRunning version={version} | loss_type=binary | method={method}")
+            run_feature_importance(version=version, loss_type='binary', method=method)
 
+"""
+Interpretation of Feature Importance Methods:
+
+1. Permutation Importance:
+   - Shuffles each feature and sees how performance drops.
+   - A higher drop = more important feature.
+   - Negative values mean model may perform better without that feature.
+
+2. SHAP (SHapley Values):
+   - Based on game theory; distributes model output among input features.
+   - Measures how much each feature contributes to the prediction.
+   - Average absolute SHAP value shows feature impact.
+
+Note: These methods offer complementary insights. SHAP is more interpretable, and permutation is intuitive but model-agnostic.
+"""
