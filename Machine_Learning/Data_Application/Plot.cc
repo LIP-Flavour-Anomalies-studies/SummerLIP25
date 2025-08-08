@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <nlohmann/json.hpp>
+#include <fstream>
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
@@ -12,6 +14,7 @@
 
 using namespace std;
 namespace fs = std::filesystem;
+using json = nlohmann::json;
 
 void Plot(){
 
@@ -20,8 +23,24 @@ void Plot(){
     fs::create_directories("Machine_Learning/Data_Application/Final_Plots/Data");
     fs::create_directories("Machine_Learning/Data_Application/Final_Plots/MC");
 
+    // --- Read thresholds from JSON ---
+    std::ifstream thrFile("Machine_Learning/Data_Application/thresholds/FoM_binary_thresholds.json");
+    if (!thrFile.is_open()) {
+        cerr << "Error: Could not open threshold file!" << endl;
+        return;
+    }
+    json j;
+    thrFile >> j;
+    thrFile.close();
+
+    // Store thresholds in a map<int,double>
+    std::map<int, double> thresholds;
+    for (auto& [key, value] : j["binary"].items()) {
+        thresholds[std::stoi(key)] = value.get<double>();
+    }
+
     // --- Open Files and Get Trees ---
-    TFile *f = new TFile("Machine_Learning/Data_Application/ROOT/data_selected_mlFoM_output.root", "read");
+    TFile *f = new TFile("Machine_Learning/Data_Application/ROOT/data_selected_ml_output.root", "read");
 	TTree *t = (TTree*)f->Get("Tdata");
 
     // --- Declare variables ---
@@ -46,7 +65,7 @@ void Plot(){
         "IsoPtR_dr04_sum"
 	};
 
-    Float_t score, threshold;
+    Float_t score;
 
     for (const auto &name : variables){
         vars[name] = 0;
@@ -110,13 +129,12 @@ void Plot(){
         // Create output directory if it doesn't exist
         fs::create_directories(Form("Machine_Learning/Data_Application/Final_Plots/Data/v%d", v));
 
-        // --- Build branch names ---
-        string score_name = Form("B_score_v%d", v);
-        string thr_name   = Form("B_thr_v%d", v);
+        // --- Use threshold from JSON ---
+        double threshold = thresholds[v];
 
-        // Connect model branches
+        // --- Connect score branch ---
+        string score_name = Form("B_score_v%d", v);
         t->SetBranchAddress(score_name.c_str(), &score);
-        t->SetBranchAddress(thr_name.c_str(), &threshold);
 
         map<string, TH1D*> h;
         map<string, TH1D*> h_cut;

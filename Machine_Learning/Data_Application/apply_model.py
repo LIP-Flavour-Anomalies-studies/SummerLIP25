@@ -154,17 +154,14 @@ def save_outputs(input_file, loss_type, versions, fom_flag=0, tree_name='Tdata')
 
         # Save model output and threshold as new branches
         new_branches[f"{loss_type[0].upper()}_score_v{version}"] = probabilities
-        new_branches[f"{loss_type[0].upper()}_thr_v{version}"] = np.full_like(probabilities, thr, dtype=np.float32)
 
     # Merge new and old branches
     all_branches = arrays.copy()
     all_branches.update(new_branches)
 
     # Overwrite or create new file with updated tree
-    if fom_flag == 0:
-        output_file = input_file.replace(".root", f"_mlJ_output.root")
-    elif fom_flag == 1:
-        output_file = input_file.replace(".root", f"_mlFoM_output.root")
+    output_file = input_file.replace(".root", f"_ml_output.root")
+
     
     new_file = uproot.recreate(output_file)
     branch_types = {key: val.dtype for key, val in all_branches.items()}
@@ -182,10 +179,6 @@ def main():
 
     save_outputs(input_data, loss_type, versions)
     save_outputs(input_mc, loss_type, versions)
-
-    # Optional: also add FoM-thresholded branches
-    save_outputs(input_data, loss_type, versions, fom_flag=1)
-    save_outputs(input_mc, loss_type, versions, fom_flag=1)
 
 if __name__ == '__main__':
     main()

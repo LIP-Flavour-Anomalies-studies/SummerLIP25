@@ -2,11 +2,17 @@
 Module to compute weights to scale FoM.
 Teresa 27/07/2025
 """
+import sys
+import os
 import ROOT
 from ROOT import RooRealVar, RooDataSet, RooArgSet, RooExponential, RooFit, TCanvas, TLine
 import uproot
 import numpy as np
 import json
+
+# Add the directory containing function to load thresholds
+sys.path.append(os.path.abspath("Machine_Learning/Data_Application"))
+from apply_model import load_threshold
 
 def get_signal_arrays(path, versions, loss_type, tree_name="Tdata"):
     """
@@ -20,13 +26,12 @@ def get_signal_arrays(path, versions, loss_type, tree_name="Tdata"):
 
     for version in versions:
         score_branch = f"{loss_type[0].upper()}_score_v{version}"
-        thr_branch = f"{loss_type[0].upper()}_thr_v{version}"
 
-        arrays = tree.arrays(["bTMass", score_branch, thr_branch], library="np")
+        arrays = tree.arrays(["bTMass", score_branch], library="np")
 
         bTMass = arrays["bTMass"]
         score = arrays[score_branch]
-        thr = arrays[thr_branch]
+        thr = load_threshold(loss_type, version)
         
         # Apply cut
         mask = score >= thr
@@ -128,8 +133,8 @@ def main():
     versions = [0, 1, 2, 3, 4, 5]
     loss_type = "binary"
 
-    data_path = f"Machine_Learning/Data_Application/ROOT/data_selected_mlJ_output.root"
-    mc_path = f"Machine_Learning/Data_Application/ROOT/mc_selected_mlJ_output.root"
+    data_path = f"Machine_Learning/Data_Application/ROOT/data_selected_ml_output.root"
+    mc_path = f"Machine_Learning/Data_Application/ROOT/mc_selected_ml_output.root"
     
 
     weights = compute_weights(data_path, mc_path, versions, loss_type)
