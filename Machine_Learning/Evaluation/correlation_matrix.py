@@ -19,9 +19,6 @@ root_data = "background.root"
 out_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Correlation_Matrices'))
 os.makedirs(out_dir, exist_ok=True)
 
-# Limites para definir sinal/background
-#sleft = 5.2
-#sright = 5.3
 
 # Abrir os ficheiros ROOT
 file_mc = ROOT.TFile.Open(os.path.join(dir_path, root_mc))
