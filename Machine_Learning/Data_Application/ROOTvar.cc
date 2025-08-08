@@ -158,8 +158,8 @@ void ROOTvar(){
             vars_data_sel["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
             vars_data_sel["kstTrkmPtR"] = vars_data["kstTrkmPt"] / vars_data["bPt"];
             vars_data_sel["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
-            vars_data_sel["muLeadingPtR"] = vars_data["muLeadingPt"] / vars_data["bPt"];
-            vars_data_sel["muTrailingPtR"] = vars_data["muTrailingPt"] / vars_data["bPt"];
+            vars_data_sel["muLeadingPtR"] = muLeadingPt / vars_data["bPt"];
+            vars_data_sel["muTrailingPtR"] = muTrailingPt / vars_data["bPt"];
             vars_data_sel["mumuPtR"] = vars_data["mumuPt"] / vars_data["bPt"];
             vars_data_sel["kstPtR"] = vars_data["kstPt"] / vars_data["bPt"];
         } 
@@ -243,8 +243,8 @@ void ROOTvar(){
             vars_mc_sel["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
             vars_mc_sel["kstTrkmPtR"] = vars_mc["kstTrkmPt"] / vars_mc["bPt"];
             vars_mc_sel["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
-            vars_mc_sel["muLeadingPtR"] = vars_mc["muLeadingPt"] / vars_mc["bPt"];
-            vars_mc_sel["muTrailingPtR"] = vars_mc["muTrailingPt"] / vars_mc["bPt"];
+            vars_mc_sel["muLeadingPtR"] = muLeadingPt / vars_mc["bPt"];
+            vars_mc_sel["muTrailingPtR"] = muTrailingPt / vars_mc["bPt"];
             vars_mc_sel["mumuPtR"] = vars_mc["mumuPt"] / vars_mc["bPt"];
             vars_mc_sel["kstPtR"] = vars_mc["kstPt"] / vars_mc["bPt"];
         }

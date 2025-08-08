@@ -20,7 +20,7 @@ def get_signal_arrays(path, versions, loss_type, tree_name="Tdata"):
 
     for version in versions:
         score_branch = f"{loss_type[0].upper()}_score_v{version}"
-        thr_branch = f"{loss_type[0].upper()}thr_v{version}"
+        thr_branch = f"{loss_type[0].upper()}_thr_v{version}"
 
         arrays = tree.arrays(["bTMass", score_branch, thr_branch], library="np")
 
@@ -128,8 +128,8 @@ def main():
     versions = [0, 1, 2, 3, 4, 5]
     loss_type = "binary"
 
-    data_path = f"Machine_Learning/Data_Application/ROOT/data_selected_ml_output.root"
-    mc_path = f"Machine_Learning/Data_Application/ROOT/mc_selected_ml_output.root"
+    data_path = f"Machine_Learning/Data_Application/ROOT/data_selected_mlJ_output.root"
+    mc_path = f"Machine_Learning/Data_Application/ROOT/mc_selected_mlJ_output.root"
     
 
     weights = compute_weights(data_path, mc_path, versions, loss_type)
