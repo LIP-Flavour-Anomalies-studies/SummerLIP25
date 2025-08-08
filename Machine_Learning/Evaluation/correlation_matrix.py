@@ -33,10 +33,6 @@ dataTree = file_data.Get("Tback")
 def build_dataframe(tree, data_type, variables):
     data = {var: [] for var in variables}
     for event in tree:
-        if data_type == "Signal" and not (sleft < event.bTMass < sright):
-            continue
-        if data_type == "Background" and (sleft < event.bTMass < sright):
-            continue
         for var in variables:
             try:
                 data[var].append(getattr(event, var))
