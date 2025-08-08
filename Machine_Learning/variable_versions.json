@@ -14,5 +14,22 @@
         "muLeadingPt", "muTrailingPt", "kstTrkpPt", "kstTrkmPt"],
 
   "5": ["bVtxCL", "kstTMass", "bCosAlphaBS", "bLBSs", "bDCABSs", "kstTrkpDCABSs", "kstTrkmDCABSs",
-        "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04"]
+        "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04"],
+
+  "6": ["bTMass", "bVtxCL", "bPt", "bPhi", "bEta",
+        "kstTMass", "kstPt", "kstPhi", "kstEta",
+        "mumuMass", "mumuPt", "mumuPhi", "mumuEta",
+        "kstTrkmPt", "kstTrkmPhi", "kstTrkmEta", "kstTrkmDCABS",
+        "kstTrkpPt", "kstTrkpPhi",  "kstTrkpEta", "kstTrkpDCABS",
+        "mumPt", "mumPhi", "mumEta", 
+        "mupPt", "mupPhi", "mupEta",
+        "bCosAlphaBS", "bLBS", "bDCABS",
+        "muLeadingPt", "muTrailingPt",
+        "bLBSs", "bDCABSs",
+        "kstTrkmDCABSs", "kstTrkpDCABSs",
+        "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR",
+        "mumuPtR", "kstPtR",
+        "mumIsoPt_dr04", "mupIsoPt_dr04", "kstTrkmIsoPt_dr04", "kstTrkpIsoPt_dr04",
+        "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04",
+        "IsoPtR_dr04_sum"]
 }
