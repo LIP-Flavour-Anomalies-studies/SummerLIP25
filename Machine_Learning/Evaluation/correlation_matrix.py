@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from variable_versions import load_variables
 
 # Caminhos dos ficheiros ROOT
-dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'Signal_vs_Background', 'ROOT_files'))
+dir_path = os.path.abspath(os.path.join(os.getcwd(), 'Signal_vs_Background', 'ROOT_files'))
 root_mc = "signal.root"
 root_data = "background.root"
 
@@ -40,7 +40,7 @@ def build_dataframe(tree, data_type, variables):
 # Função para criar e guardar o gráfico
 def make_correlation_plot(df, data_type, version):
     corr = df.corr()
-    plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(27, 25))
     sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5)
     plt.title(f"{data_type} Correlation Matrix (v{version})")
     plt.tight_layout()
@@ -48,7 +48,8 @@ def make_correlation_plot(df, data_type, version):
     plt.close()
 
 # Loop para todas as versões
-for version in [0, 1, 2, 3, 4, 5]:
+# for version in [0, 1, 2, 3, 4, 5]:  # <-- código original
+for version in [6]: 
     print(f"A gerar matrizes de correlação para v{version}...")
 
     variables = load_variables(version, config_path=os.path.join(os.path.dirname(__file__), '..', 'variable_versions.json'))
@@ -59,5 +60,5 @@ for version in [0, 1, 2, 3, 4, 5]:
     make_correlation_plot(df_signal, "Signal", version)
     make_correlation_plot(df_bkg, "Background", version)
 
-print(" Matrizes de correlação geradas para todas as versões.")
-
+# print(" Matrizes de correlação geradas para todas as versões.")  # <-- código original
+print("Matrizes de correlação geradas para v6.")  # <-- ajustado para indicar apenas v6
