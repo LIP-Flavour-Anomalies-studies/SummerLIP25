@@ -20,7 +20,7 @@ sns.set_style("darkgrid")
 
 def main():
     # training options: "both", "binary", "focal"
-    mode = "both" 
+    mode = "binary" 
 
     try:
         dir = "Signal_vs_Background/ROOT_files"
@@ -53,9 +53,9 @@ def main():
         print()
 
         # Create DataLoader for training and testing
-        train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
-        val_loader = DataLoader(val_set, batch_size=32, shuffle=True)
-        test_loader = DataLoader(test_set, batch_size=64, shuffle=False)
+        train_loader = DataLoader(train_set, batch_size=64, shuffle=True)
+        val_loader = DataLoader(val_set, batch_size=128, shuffle=True)
+        test_loader = DataLoader(test_set, batch_size=128, shuffle=False)
 
         input_size = x.shape[1]
 
@@ -74,7 +74,7 @@ def main():
 
             # Define loss function and optimizer
             B_criterion = BalancedLoss(alpha=class_weights)
-            B_optimizer = optim.Adam(B_model.parameters(), lr=0.001)
+            B_optimizer = optim.Adam(B_model.parameters(), lr=0.001, weight_decay=1e-4)
 
             # Early stopping
             B_early_stopping = EarlyStopping(patience=100, delta=1e-6)
@@ -97,7 +97,7 @@ def main():
 
             # Define loss function and optimizer
             F_criterion = FocalLoss(alpha=class_weights)
-            F_optimizer = optim.Adam(F_model.parameters(), lr=0.001)
+            F_optimizer = optim.Adam(F_model.parameters(), lr=0.001, weight_decay=1e-4)
 
             # Early stopping
             F_early_stopping = EarlyStopping(patience=100, delta=1e-6)
