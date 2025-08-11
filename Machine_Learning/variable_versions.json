@@ -31,5 +31,36 @@
         "mumuPtR", "kstPtR",
         "mumIsoPt_dr04", "mupIsoPt_dr04", "kstTrkmIsoPt_dr04", "kstTrkpIsoPt_dr04",
         "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04",
-        "IsoPtR_dr04_sum"]
+        "IsoPtR_dr04_sum"],
+
+  "7": ["bVtxCL", "bPt", "bPhi", "bEta",
+        "kstTMass", "kstPt", "kstPhi", "kstEta",
+        "mumuMass", "mumuPt", "mumuPhi", "mumuEta",
+        "kstTrkmPt", "kstTrkmPhi", "kstTrkmEta", "kstTrkmDCABS",
+        "kstTrkpPt", "kstTrkpPhi",  "kstTrkpEta", "kstTrkpDCABS",
+        "mumPt", "mumPhi", "mumEta", 
+        "mupPt", "mupPhi", "mupEta",
+        "bCosAlphaBS", "bLBS", "bDCABS",
+        "muLeadingPt", "muTrailingPt",
+        "bLBSs", "bDCABSs",
+        "kstTrkmDCABSs", "kstTrkpDCABSs",
+        "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR",
+        "mumuPtR", "kstPtR",
+        "mumIsoPt_dr04", "mupIsoPt_dr04", "kstTrkmIsoPt_dr04", "kstTrkpIsoPt_dr04",
+        "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04",
+        "IsoPtR_dr04_sum"],
+
+  "8": ["bPt", "bLBSs", "kstPt", "bCosAlphaBS", "kstTrkmDCABSs", "kstTrkpIsoPtR_dr04", "mumPt", "mumuPt", "mupPt", 
+        "bDCABSs", "kstTrkpPt", "bVtxCL", "kstTrkmIsoPtR_dr04", "muLeadingPt"],
+
+  "9": ["bPt", "bLBSs", "kstPt", "bCosAlphaBS", "mumPt", "kstTrkpIsoPtR_dr04", "mupPt", "mumuPt"],
+
+  "10": ["bVtxCL", "kstTMass", "kstPt", "mumuMass", "kstTrkmPt", "kstTrkmDCABS", "kstTrkpPt", "kstTrkpDCABS", 
+        "mumPt", "mupPt", "bCosAlphaBS", "muLeadingPt", "muTrailingPt", "bLBSs", "bDCABSs", "kstTrkmDCABSs", 
+        "kstTrkpDCABSs", "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR", "mumuPtR", "kstPtR", 
+        "kstTrkmIsoPt_dr04", "kstTrkpIsoPt_dr04", "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", 
+        "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"],
+      
+  "11": ["kstPt", "bLBSs", "bCosAlphaBS", "IsoPtR_dr04_sum", "kstTrkmDCABSs", 
+         "kstTrkpPt", "bVtxCL", "bDCABSs", "kstTrkpDCABSs", "kstTrkmPt"]
 }

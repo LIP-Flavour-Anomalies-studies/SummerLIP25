@@ -14,9 +14,17 @@ Flavour Anomalies Internship project focusing on preparing data from Monte Carlo
 | `Machine_Learning/`                                     | Core ML pipeline: <br>• `Training/` – training scripts and configs <br>• `Evaluation/` – scripts to evaluate trained models <br>•`Data_Application/` - scripts to apply trained models |
 | `variable_versions.json`                                | File containing map to different training versions and corresponding input features|
 | `variable_versions.py`                                  | Loads variables used for training according to version                      |
+| `Data_Application/`                                     | Post-evaluation results. |
+| `ROOTvar.cc`                                            | Prepares ROOT files to apply trained models to full datasets.|
+| `apply_model.py`                                        | Applies model to full dataset and saves ML output as new branch in ROOT file.|
+| `weights.py`                                            | Computes weights to scale FoM, and saves them in json file.|
+| `FoM.py`                                                | Computes and saves best threshold based on FoM maximisation.|
+| `Plot.cc`                                               | Plots variables histograms pre and post threshold cut.|
 | `Evaluation/`                                           | Evaluation results, plots, and post-training analyses. |
 | `checkpoints/`                                          | Saved model weights from training (e.g., best/last checkpoints). |
 | `B_evaluation.py`, `F_evaluation.py`, `evaluation.py`   | Evaluate models with different loss functions. |
+| `feature_importance.py`                                 | Calculates feature importance using two different methods (permutation and SHAP).|
+| `correlation_matrix.py`                                 | Creates correlation matrices for different input features.|
 | `Training/`                                             | Training-related files and loss curve outputs. |
 | `early_stopping.py`                                     | Early stopping implementation based on validation loss. |
 | `losses.py`                                             | Custom loss functions (Balanced Cross-Entropy and Focal Loss). |
@@ -91,12 +99,11 @@ pip install -r requirements.txt
     - Prepares files to apply trained models on full datasets.
 7. Run `python Machine_Learning/Data_Application/apply_model.py`
     - Applies model to full dataset
-    - Saves ML output and best thr as new branches in the ROOT file.
+    - Saves ML output as new branch in the ROOT file.
 8. Run `python Machine_Learning/Data_Application/weights.py`
     - Computes scaling weights to use in FoM.
 9. Run `python Machine_Learning/Data_Application/FoM.py`
-    - Determines new best threshold based on FoM maximisation.
-10. Apply model again to save thresholds after FoM as new branches in ROOT file.
+    - Determines new best threshold based on FoM maximisation and saves it in json file.
 
 --- 
 
@@ -136,6 +143,3 @@ git push origin my-feature
 2. Go to GitHub and click "Compare & pull request".
 3. Create the pull request (PR), assign reviewers if needed.
 4. Click Merge pull request.
-
-
-
