@@ -55,12 +55,19 @@
 
   "9": ["bPt", "bLBSs", "kstPt", "bCosAlphaBS", "mumPt", "kstTrkpIsoPtR_dr04", "mupPt", "mumuPt"],
 
-  "10": ["bVtxCL", "kstTMass", "kstPt", "mumuMass", "kstTrkmPt", "kstTrkmDCABS", "kstTrkpPt", "kstTrkpDCABS", 
-        "mumPt", "mupPt", "bCosAlphaBS", "muLeadingPt", "muTrailingPt", "bLBSs", "bDCABSs", "kstTrkmDCABSs", 
-        "kstTrkpDCABSs", "kstTrkpPtR", "kstTrkmPtR", "muTrailingPtR", "muLeadingPtR", "mumuPtR", "kstPtR", 
-        "kstTrkmIsoPt_dr04", "kstTrkpIsoPt_dr04", "mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", 
-        "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"],
+  "10": ["bTMass","bVtxCL", "kstTMass", "kstPt", "kstTrkmPt", "kstTrkmDCABS", "kstTrkpPt", "kstTrkpDCABS",
+        "mumPt", "mupPt", "bCosAlphaBS", "bLBS", "bDCABS", "muLeadingPt", "muTrailingPt",
+        "bLBSs", "bDCABSs", "kstTrkmDCABSs", "kstTrkpDCABSs", "kstTrkpPtR", "kstTrkmPtR", 
+        "muTrailingPtR", "muLeadingPtR", "mumuPtR", "kstPtR","mumIsoPtR_dr04", "mupIsoPtR_dr04", 
+        "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"],
       
-  "11": ["kstPt", "bLBSs", "bCosAlphaBS", "IsoPtR_dr04_sum", "kstTrkmDCABSs", 
-         "kstTrkpPt", "bVtxCL", "bDCABSs", "kstTrkpDCABSs", "kstTrkmPt"]
+  "11": ["bVtxCL", "kstTMass", "kstPt", "kstTrkmPt", "kstTrkmDCABS", "kstTrkpPt", "kstTrkpDCABS",
+        "mumPt", "mupPt", "bCosAlphaBS", "bLBS", "bDCABS", "muLeadingPt", "muTrailingPt",
+        "bLBSs", "bDCABSs", "kstTrkmDCABSs", "kstTrkpDCABSs", "kstTrkpPtR", "kstTrkmPtR", 
+        "muTrailingPtR", "muLeadingPtR", "mumuPtR", "kstPtR","mumIsoPtR_dr04", "mupIsoPtR_dr04", 
+        "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"],
+      
+  "12": ["kstPt", "bLBSs", "bCosAlphaBS", "IsoPtR_dr04_sum", "bVtxCL", "bDCABSs", "kstTrkmDCABSs", 
+        "kstTrkpDCABSs", "kstTrkpIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "muTrailingPt", "mupIsoPtR_dr04"]
+        
 }

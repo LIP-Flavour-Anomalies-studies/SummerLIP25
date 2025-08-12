@@ -25,11 +25,11 @@ from prepdata_v0 import ClassificationDataset, prepdata
 sns.set_style("darkgrid")
 
 # Config 
-version = 10
+version = 11
 loss_type = "binary"
 batch_size = 1024
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-cumulative_threshold = 0.90  # keep top features covering 90% importance
+cumulative_threshold = 0.95  # keep top features covering 90% importance
 
 # Load Variables 
 variable_list = load_variables(version)

@@ -118,6 +118,9 @@ void prepdata(){
     for(Long64_t i = 0; i < nEntries_data; i++){    
         t_data->GetEntry(i);    
 
+        double mumu_mass = vars_data["mumuMass"];
+        if (mumu_mass < 3.0 || mumu_mass > 3.2) continue; // keep events around J/psi mass
+
         double mass_b = (vars_data["tagB0"] == 1) ? vars_data["bMass"] : vars_data["bBarMass"];
 		if (mass_b < mmin || mass_b > mmax) continue;
 
