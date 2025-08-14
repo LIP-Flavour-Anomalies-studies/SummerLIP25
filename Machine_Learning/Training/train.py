@@ -38,7 +38,8 @@ def regul(val_loader, model, criterion, epoch, num_epochs, early_stopping):
     return val_loss
 
 
-def train_model(model, early_stopping, train_loader, val_loader, criterion, optimizer, num_epochs=1000, flag=0):
+def train_model(model, early_stopping, train_loader, val_loader, criterion, optimizer, 
+                num_epochs=1000, flag=0, return_losses=False):
     """
     Trains the model and plots training vs validation loss with early stopping.
 
@@ -57,7 +58,6 @@ def train_model(model, early_stopping, train_loader, val_loader, criterion, opti
     """
     plt.switch_backend("Agg")
     
-    stop = 0
     tl_vector, vl_vector = [], []
     idx = num_epochs - 1
 
@@ -80,20 +80,25 @@ def train_model(model, early_stopping, train_loader, val_loader, criterion, opti
         vl_vector.append(val_loss)
 
         # Save best epoch number
-        if early_stopping.early_stop and stop == 0:
+        if early_stopping.early_stop:
             idx = epoch - early_stopping.patience
             print(f"Early stopping at epoch {idx}\n Lowest loss: {-early_stopping.best_score}")
-            stop = 1
+            break
 
     # Load the best model
     early_stopping.load_best_model(model)
 
-    indices = range(1, num_epochs + 1) 
+    # If Optuna is running, skip plotting and return loss curves
+    if return_losses:
+        return tl_vector, vl_vector, idx
 
-    # Plot training and validation loss 
+    # Otherwise, plot immediately
+    last_epoch = epoch + 1
+    indices = range(1, last_epoch + 1) 
+
     plt.figure()
-    plt.plot(indices, tl_vector, label="Training", color="navy", markersize=1)
-    plt.plot(indices, vl_vector, label="Validation", color="orange", markersize=1)
+    plt.plot(indices, tl_vector[:last_epoch], label="Training", color="navy", markersize=1)
+    plt.plot(indices, vl_vector[:last_epoch], label="Validation", color="orange", markersize=1)
     plt.scatter(idx + 1, vl_vector[idx], color="black", label="Early Stop", s=64)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
@@ -101,8 +106,8 @@ def train_model(model, early_stopping, train_loader, val_loader, criterion, opti
     plt.legend()
 
     # Dynamic y-axis focus around the plateau
-    min_loss = min(min(tl_vector), min(vl_vector))
-    max_loss = max(min(tl_vector), min(vl_vector))
+    min_loss = min(min(tl_vector[:last_epoch]), min(vl_vector[:last_epoch]))
+    max_loss = max(min(tl_vector[:last_epoch]), min(vl_vector[:last_epoch]))
     plt.ylim(min_loss * 0.95, max_loss * 1.2)  
 
     if flag == 0:
