@@ -22,7 +22,7 @@ roc_data = {}
 
 for loss_type in ["binary"]:
 
-    for version in [2, 3, 9, 11, 12]:
+    for version in [13, 14]:
 
         model, test_loader = load_model(loss_type, version)
 
@@ -46,7 +46,7 @@ for loss_type in ["binary"]:
     for version, (fpr, tpr, auc, best_point) in roc_data.items():
         label = f"v{version} {loss_type} (AUC = {auc:.3f})"
         plt.plot(fpr, tpr, label=label)
-        #plt.scatter(best_point[0], best_point[1], label=f"v{version} Best Threshold", marker='o')
+        plt.scatter(best_point[0], best_point[1], label=f"v{version} Best Threshold", marker='o')
 
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")

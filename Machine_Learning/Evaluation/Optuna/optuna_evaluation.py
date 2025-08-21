@@ -21,14 +21,20 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 
 sns.set_style("darkgrid")
 
+# Add the directory containing variables
+sys.path.append(os.path.abspath("Machine_Learning"))
+from variable_versions import load_variables
+
 # Add the directory containing NeuralNetwork.py to the Python path
 sys.path.append(os.path.abspath("Machine_Learning/Training"))
 from optunaNN import DynamicClassificationModel
+from models import ClassificationModel
+from prepdata_v0 import prepdata, ClassificationDataset
 
-def load_model_save_params(out_dir="."):
+def load_model_save_params(version, out_dir="."):
 
     # load checkpoint
-    checkpoint_path = "Machine_Learning/Evaluation/checkpoints_optim/best_model_v2_20.pth"
+    checkpoint_path = f"Machine_Learning/Evaluation/checkpoints_optim/best_model_v{version}.pth"
     checkpoint = torch.load(checkpoint_path, weights_only=False)
 
     full_dataset = checkpoint["dataset"]
@@ -71,6 +77,41 @@ def load_model_save_params(out_dir="."):
 
     
     return model, test_loader
+
+def load_model2(original_version):
+    """ for evaluation of the optuna feature selection training."""
+
+    # load checkpoint
+    checkpoint_path = f"Machine_Learning/Evaluation/checkpoints_optim/best_features_v{original_version}.pth"
+    checkpoint = torch.load(checkpoint_path, weights_only=False)
+
+    x_test = checkpoint["X_test"]
+    y_test = checkpoint["y_test"]
+    selected_features = checkpoint["selected_features"]
+
+    # Get indices of selected features
+    FEATURE_NAMES = load_variables(original_version)  # or your original variable list
+    selected_indices = [i for i, f in enumerate(FEATURE_NAMES) if f in selected_features]
+
+    # Filter datasets to only selected features
+    x_test  = x_test[:, selected_indices]
+
+    # Update input_size
+    input_size = len(selected_indices)
+
+    test_set = ClassificationDataset(x_test, y_test)
+
+    test_loader = DataLoader(test_set, batch_size=32, shuffle=False)
+
+    model = DynamicClassificationModel(
+        input_size, 2, [32, 16], 0.1)
+
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+
+    return model, test_loader
+
+
 
 
 # --- Get targets and probabilities ---
@@ -178,15 +219,113 @@ def save_metrics_pdf(targets, probabilities, out_dir=".",  best_thr=0.5):
     print(f"Metrics PDF saved to {pdf_filename}")
 
 
+def plot_loss_curve(version, out_dir="."):
+
+    # load checkpoint
+    #checkpoint_path = f"Machine_Learning/Evaluation/checkpoints_optim/best_model_v{version}.pth"
+    checkpoint_path = f"Machine_Learning/Evaluation/checkpoints_optim/best_features_v11.pth"
+    checkpoint = torch.load(checkpoint_path, weights_only=False)
+
+    train_loss_curve = checkpoint["train_loss_curve"]
+    val_loss_curve = checkpoint["val_loss_curve"]
+    best_epoch = checkpoint["best_epoch"]
+
+    indices = range(1, len(train_loss_curve) + 1)
+    plt.figure()
+    plt.plot(indices, train_loss_curve, label="Training", color="navy", markersize=1)
+    plt.plot(indices, val_loss_curve, label="Validation", color="orange", markersize=1)
+    plt.scatter(best_epoch + 1, val_loss_curve[best_epoch], color="black", label="Early Stop", s=64)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig(os.path.join(out_dir, f"loss_curve_v{version}.pdf"))
+    plt.close()
+
+
+def plot_roc_comparison(version, out_dir="."):
+
+    # get checkpoint for model before optimisation
+    path = f"Machine_Learning/Evaluation/checkpoints/B_model_checkpoint_v{version}.pth"
+    checkpoint = torch.load(path, weights_only=False)
+
+    full_dataset = checkpoint["dataset"]
+    test_dataset = checkpoint["test_set"]
+    test_dataset.y = test_dataset.y.long()
+    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+
+    input_size = full_dataset.X.shape[1]
+    model = ClassificationModel(input_size)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+
+    # get roc data before optimisation
+    targets, probabilities = get_targets_probabilities(model, test_loader)
+    fpr, tpr, _ = roc_curve(targets, probabilities)
+    roc_auc = auc(fpr, tpr)
+
+    # get model after optimisation
+    path_optim = f"Machine_Learning/Evaluation/checkpoints_optim/best_model_v{version}.pth"
+    checkpoint_optim = torch.load(path_optim, weights_only=False)
+
+    full_dataset_optim = checkpoint_optim["dataset"]
+    test_dataset_optim = checkpoint_optim["test_set"]
+    test_dataset_optim.y = test_dataset_optim.y.long()
+
+    test_loader_optim = DataLoader(test_dataset_optim, batch_size=32, shuffle=False)
+
+    hyperparams = checkpoint_optim["trial_params"]
+    neurons = [hyperparams[f"neurons_l{i}"] for i in range(hyperparams["n_layers"])]
+    input_size_optim = full_dataset_optim.X.shape[1]
+
+    model_optim = DynamicClassificationModel(
+        input_size_optim,
+        hyperparams["n_layers"],
+        neurons,
+        hyperparams["dropout_rate"]
+    )
+    model_optim.load_state_dict(checkpoint_optim['model_state_dict'])
+    model_optim.eval()
+
+    # get roc data after optimisation
+    targets_optim, probabilities_optim = get_targets_probabilities(model_optim, test_loader_optim)
+    fpr_optim, tpr_optim, _ = roc_curve(targets_optim, probabilities_optim)
+    roc_auc_optim = auc(fpr_optim, tpr_optim)
+
+    # Plot ROC comparison
+    plt.figure()
+    plt.plot(fpr, tpr, color='blue', lw=2,
+             label=f'ROC curve (AUC = {roc_auc:.4f})')
+    plt.plot(fpr_optim, tpr_optim, color='darkorange', lw=2,
+             label=f'Optim ROC curve (AUC = {roc_auc_optim:.4f})')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc="lower right")
+    plt.xlim(0, 0.2)
+    plt.ylim(0.8, 1)
+    save_path = os.path.join(out_dir, "roc_comparison.pdf")
+    plt.savefig(save_path)
+    plt.close()
+    print(f"ROC curve comparison saved to {save_path}")
+    
+
+
+
+
+
 if __name__ == "__main__":
 
-    version = 2
+    version = 14
+    #original_version = 11
     output_dir = os.path.join("Machine_Learning/Evaluation/Optuna", f"v{version}")
     os.makedirs(output_dir, exist_ok=True)
-    model, test_loader = load_model_save_params(output_dir)
+
+    model, test_loader = load_model_save_params(version, output_dir)
+    #model, test_loader = load_model2(original_version)
+    
     targets, probabilities = get_targets_probabilities(model, test_loader)
     plot_histogram(targets, probabilities, output_dir)
     plot_roc_curve(targets, probabilities, output_dir)
     save_metrics_pdf(targets, probabilities, output_dir)
-
+    plot_loss_curve(version, output_dir)
+    plot_roc_comparison(version, output_dir)
     

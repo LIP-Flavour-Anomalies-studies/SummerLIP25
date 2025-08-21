@@ -1,5 +1,5 @@
 """
-Module to study hyperparameter optimisation.
+Feature selection with Optuna
 """
 import optuna
 import torch
@@ -16,7 +16,11 @@ from losses import BalancedLoss
 from early_stopping import EarlyStopping
 from train import train_model
 
+# Add the directory containing variables
+sys.path.append(os.path.abspath("Machine_Learning"))
+from variable_versions import load_variables
 
+# --- Model Definition --- #
 
 class DynamicClassificationModel(nn.Module):
     def __init__(self, input_size, n_layers, neurons, dropout_rate):
@@ -38,18 +42,38 @@ class DynamicClassificationModel(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-def objective(trial, train_loader, val_loader, input_size, class_weights, models):
+# --- Optuna objective function --- #
+def objective(trial, x_train, y_train, x_val, y_val, class_weights, models, feature_names):
 
-    # --- Hyperparameters to tune ---
-    n_layers = trial.suggest_int("n_layers", 1, 5)
-    # Sample neurons per layer individually
-    neurons = [trial.suggest_int(f"neurons_l{i}", 8, 128, log=True) for i in range(n_layers)]
-    dropout_rate = trial.suggest_float("dropout_rate", 0.0, 0.5)
-    learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True)
-    weight_decay = trial.suggest_float("weight_decay", 0, 1e-3)
-    batch_size = trial.suggest_categorical("batch_size", [32, 64, 128, 256])
+    input_size = x_train.shape[1]
 
-    model = DynamicClassificationModel(input_size, n_layers, neurons, dropout_rate)
+    # --- Suggest a subset of features ---
+    # binary mask for each feature (0 = drop, 1 = keep)
+    mask = [trial.suggest_int(f"feat_{i}", 0, 1) for i in range(input_size)]
+    selected_indices = [i for i, m in enumerate(mask) if m == 1]
+
+    # ensure at least N features are kept (say between 8 and 16)
+    if not (8 <= len(selected_indices) <= 16):
+        raise optuna.exceptions.TrialPruned()
+    
+    # filter datasets by feature mask
+    x_train_sel = x_train[:, selected_indices]
+    x_val_sel   = x_val[:, selected_indices]
+
+    train_set = ClassificationDataset(x_train_sel, y_train)
+    val_set   = ClassificationDataset(x_val_sel, y_val)
+
+    train_loader = DataLoader(train_set, batch_size=64, shuffle=True)
+    val_loader   = DataLoader(val_set, batch_size=128, shuffle=False)
+
+    # ---- Fixed, simple NN hyperparameters for feature search (from first model) ----
+    n_layers = 2
+    neurons = [32, 16]
+    dropout_rate = 0.1
+    learning_rate = 1e-3
+    weight_decay = 1e-4
+
+    model = DynamicClassificationModel(len(selected_indices), n_layers, neurons, dropout_rate)
 
     criterion = BalancedLoss(alpha=class_weights)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -66,10 +90,11 @@ def objective(trial, train_loader, val_loader, input_size, class_weights, models
 
     # Compare current trial to best trial in study (if any)
     if len(trial.study.trials) == 1 or val_loss < trial.study.best_trial.value:
+        selected_features = [feature_names[i] for i in selected_indices]
         # Save the best model and info
         models.clear()
         models.extend([model.state_dict(), trial.params, val_loss,
-                        tl_vector, vl_vector, best_epoch])
+                        tl_vector, vl_vector, best_epoch, selected_features])
 
     return val_loss
 
@@ -82,11 +107,14 @@ def main():
     file_signal = "signal.root"
     file_back = "background.root"
     # Choose training version
-    version = 14
+    version = 11
 
     # load data
     x, y = prepdata(dir, file_signal, file_back, version)
     dataset = ClassificationDataset(x, y)
+
+    # load feature names (align with X)
+    feature_names = load_variables(version)
 
     # approx 50% train, 25% val, 25% test
     x_train_val, x_test, y_train_val, y_test = train_test_split(
@@ -96,32 +124,28 @@ def main():
         x_train_val, y_train_val, test_size=0.3333, stratify=y_train_val, random_state=42
     )
 
-    train_set = ClassificationDataset(x_train, y_train)
-    val_set = ClassificationDataset(x_val, y_val)
-    test_set = ClassificationDataset(x_test, y_test)
-
-    # Default, will be overridden in objective but dataloaders need batch size initially
-    batch_size = 64
-
-    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size=batch_size*2, shuffle=False)
-
-    input_size = x.shape[1]
     class_weights = torch.tensor([1 / np.sum(y == 0), 1 / np.sum(y == 1)], dtype=torch.float32)
     class_weights /= class_weights.sum()
 
     models = []
 
+    # Run Optuna for feature search 
     study = optuna.create_study(direction="minimize")
-    study.optimize(lambda trial: objective(trial, train_loader, val_loader, input_size, class_weights, models), n_trials=50)
+    study.optimize(lambda trial: objective(trial, x_train, y_train, x_val, y_val,
+                                           class_weights, models, feature_names), n_trials=100)
 
-    print("Best trial params:", study.best_params)
     print("Best validation loss:", study.best_value)
+    print("Best feature subset:", models[6])
+
+    # --- Guard in case all trials were pruned ---
+    if not models:
+        print("No valid feature subset found. Try relaxing constraints (min/max features).")
+        return
 
     # Save the best model checkpoint after optimization
     checkpoint_dir = "Machine_Learning/Evaluation/checkpoints_optim"
     os.makedirs(checkpoint_dir, exist_ok=True)
-    checkpoint_path = os.path.join(checkpoint_dir, f"best_model_v{version}.pth")
+    checkpoint_path = os.path.join(checkpoint_dir, f"best_features_v{version}.pth")
 
     torch.save({
         "model_state_dict": models[0],
@@ -130,8 +154,9 @@ def main():
         "train_loss_curve": models[3],
         "val_loss_curve": models[4],
         "best_epoch": models[5],
-        "dataset": dataset, 
-        "test_set": test_set
+        "selected_features": models[6],
+        "X_test": x_test.astype(np.float32),
+        "y_test": y_test.astype(np.float32),
     }, checkpoint_path) 
 
 

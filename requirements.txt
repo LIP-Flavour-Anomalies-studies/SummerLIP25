@@ -7,3 +7,4 @@ scikit-learn
 reportlab
 shap
 captum
+optuna

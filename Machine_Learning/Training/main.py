@@ -27,7 +27,7 @@ def main():
         file_signal = "signal.root"
         file_back = "background.root"
         # Choose training version
-        version = 12
+        version = 14
 
         x, y = prepdata(dir, file_signal, file_back, version)
         dataset = ClassificationDataset(x, y)

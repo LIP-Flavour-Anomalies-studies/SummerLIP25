@@ -296,10 +296,10 @@ def plot_combined_roc(roc_data, version_dir):
 
 def main():
     roc_data = {}
-    for loss_type in ["focal", "binary"]:
+    for loss_type in ["binary"]:
         try:
             # Choose version
-            version = 1
+            version = 14
             # Save evaluations files
             version_dir = None
             if version is not None:
@@ -318,7 +318,7 @@ def main():
             print(f"[{loss_type.upper()}] An error occurred: {e}")
 
     # Plot merged ROC after both evaluations
-    plot_combined_roc(roc_data, version_dir)
+    #plot_combined_roc(roc_data, version_dir)
 
 
 if __name__ == '__main__':

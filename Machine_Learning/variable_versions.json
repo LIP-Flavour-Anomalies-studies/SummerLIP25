@@ -68,6 +68,12 @@
         "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"],
       
   "12": ["kstPt", "bLBSs", "bCosAlphaBS", "IsoPtR_dr04_sum", "bVtxCL", "bDCABSs", "kstTrkmDCABSs", 
-        "kstTrkpDCABSs", "kstTrkpIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "muTrailingPt", "mupIsoPtR_dr04"]
+        "kstTrkpDCABSs", "kstTrkpIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "muTrailingPt", "mupIsoPtR_dr04"],
+
+  "13": ["bVtxCL", "kstTMass", "kstPt", "kstTrkmPt", "kstTrkpPt", "bCosAlphaBS", "muLeadingPt", "bLBSs", 
+         "kstTrkmDCABSs", "kstTrkpPtR", "kstTrkmPtR", "mumuPtR", "mupIsoPtR_dr04", "kstTrkpIsoPtR_dr04"],
+
+  "14": ["kstPt", "bLBSs", "bCosAlphaBS", "IsoPtR_dr04_sum", "bVtxCL", "bDCABSs", "kstTrkmDCABSs", "kstTrkpDCABSs", 
+         "kstTrkpIsoPtR_dr04", "muTrailingPt", "mupIsoPtR_dr04", "mumIsoPtR_dr04", "kstTrkpPt", "mumPt"]
         
 }
