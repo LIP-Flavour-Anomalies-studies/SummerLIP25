@@ -16,12 +16,11 @@ namespace fs = std::filesystem;
 
 void plot_final(){
 
-    double threshold = 0.282565130260521;
+    double threshold = 0.8637274549098196;
 
     // Create output directory if it doesn't exist
     fs::create_directories("NewData/Final_Plots/Data");
 
-    
     // --- Open Files and Get Trees ---
     TFile *f = new TFile("NewData/ROOT_files/data_selected_ml_output.root", "read");
 	TTree *t = (TTree*)f->Get("Tdata");

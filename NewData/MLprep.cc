@@ -5,15 +5,28 @@
 #include "TFile.h"
 #include "TTree.h"
 #include <filesystem>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 using namespace std;
 namespace fs = std::filesystem;
+using json = nlohmann::json;
 
 
 void MLprep(){
 
     // Create output directory if it doesn't exist
     fs::create_directories("NewData/ROOT_files");
+
+    // --- Read s_left and s_right from JSON ---
+    double s_left = 0, s_right = 0;
+    {
+        std::ifstream jf("NewData/scalings/fit_params_mc.json");
+        json j;
+        jf >> j;
+        s_left = j["sb_left_max"];
+        s_right = j["sb_right_min"];
+    }
 
     // --- Open Files and Get Trees ---
     TFile *f_data = new TFile("/lstore/cms/boletti/Run3-ntuples/ntuple_flat_22F.root", "read");
@@ -108,8 +121,6 @@ void MLprep(){
 
     double mmin = 5;
     double mmax = 5.6;
-    double s_left = 5.135882700839222;
-    double s_right = 5.420696456492406;
 
     // --- Fill background file ---
     cout << "Looping over data..." << endl;

@@ -72,17 +72,17 @@ pip install -r requirements.txt
 
 1. `module load root` 
 2. Activate environment
-3. Run `root NewData/MLprep.cc` 
-    - Creates new signal and background ROOT files with selected variables.
-4. Run `root NewData/plot_SigBkg.cc` 
-    - Creates comparison plots between signal from MC and background from data sidebands.
-5. Run `root NewData/bMass_data.cc` 
-    - Checks bMass variable and applies a few manual cuts (were based on comparison plots).
-6. Run `python NewData/fit_v0.py` 
+3. Run `root NewData/bMass_data.cc` 
+    - Checks bMass variable and applies a few manual cuts (were based on initial comparison plots).
+4. Run `python NewData/fit_v0.py` 
     - Fits a double gaussian to MC and extracts sideband values (3 sigma away from mean).
     - Fits double gaussian and exponential to data (after manual cuts and peak is visible).
     - Applying MC sideband values to data fit, determines number of backgorund events in each region.
     - All fitting parameters, sideband and event values are saved in JSON files (to later scale FoM).
+5. Run `root NewData/MLprep.cc` 
+    - Creates new signal and background ROOT files with selected variables.
+6. Run `root NewData/plot_SigBkg.cc` 
+    - Creates comparison plots between signal from MC and background from data sidebands.
 7. Run `python NewData/correlation.py` 
     - Generates correlation matrices and csv files.
     - Should initially be run with set of all possible input features to guide feature selection.

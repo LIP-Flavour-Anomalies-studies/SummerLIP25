@@ -167,7 +167,6 @@ void applic_prep(){
         if (vars_data["bPt"] != 0){
             vars_data_sel["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
             vars_data_sel["kstTrkmPtR"] = vars_data["kstTrkmPt"] / vars_data["bPt"];
-            vars_data_sel["kstTrkpPtR"] = vars_data["kstTrkpPt"] / vars_data["bPt"];
             vars_data_sel["muLeadingPtR"] = muLeadingPt / vars_data["bPt"];
             vars_data_sel["muTrailingPtR"] = muTrailingPt / vars_data["bPt"];
             vars_data_sel["mumuPtR"] = vars_data["mumuPt"] / vars_data["bPt"];
@@ -252,7 +251,6 @@ void applic_prep(){
         if (vars_mc["bPt"] != 0){
             vars_mc_sel["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
             vars_mc_sel["kstTrkmPtR"] = vars_mc["kstTrkmPt"] / vars_mc["bPt"];
-            vars_mc_sel["kstTrkpPtR"] = vars_mc["kstTrkpPt"] / vars_mc["bPt"];
             vars_mc_sel["muLeadingPtR"] = muLeadingPt / vars_mc["bPt"];
             vars_mc_sel["muTrailingPtR"] = muTrailingPt / vars_mc["bPt"];
             vars_mc_sel["mumuPtR"] = vars_mc["mumuPt"] / vars_mc["bPt"];

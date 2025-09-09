@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1D.h"
@@ -11,11 +13,22 @@
 
 using namespace std;
 namespace fs = std::filesystem;
+using json = nlohmann::json;
 
 void plot_SigBkg(){
 
     // Create output directory if it doesn't exist
     fs::create_directories("NewData/SigBkg_Plots");
+
+    // --- Read s_left and s_right from JSON ---
+    double s_left = 0, s_right = 0;
+    {
+        std::ifstream jf("NewData/scalings/fit_params_mc.json");
+        json j;
+        jf >> j;
+        s_left = j["sb_left_max"];
+        s_right = j["sb_right_min"];
+    }
 
     // --- Open Files and Get Trees ---
     TFile *f_signal = new TFile("NewData/ROOT_files/signal.root", "read");
@@ -56,8 +69,6 @@ void plot_SigBkg(){
 		t_signal->SetBranchAddress(name.c_str(), &vars_signal[name]);
     }
 
-    double s_left = 5.135882700839222;
-    double s_right = 5.420696456492406;
     double nbins = 100;
 
     // --- Histogram storage ---
