@@ -57,15 +57,18 @@ def save_correlation_artifacts(df, data_type):
 
     # Save CSV (this is what cumulative_shap_groups.py expects)
     csv_path = os.path.join(out_dir, f"{data_type}_CorrelationMatrix.csv")
+    #csv_path = os.path.join(out_dir, f"{data_type}_CorrelationMatrix_final.csv")
     corr.to_csv(csv_path)
 
     # Save PNG (optional visualization)
     plt.figure(figsize=(27, 25))
+    #plt.figure(figsize=(16, 14))
     # annot=False to avoid huge labels; change to True if you really want per-cell text
     sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5)
     plt.title(f"{data_type} Correlation Matrix")
     plt.tight_layout()
     png_path = os.path.join(out_dir, f"{data_type}_CorrelationMatrix.png")
+    #png_path = os.path.join(out_dir, f"{data_type}_CorrelationMatrix_final.png")
     plt.savefig(png_path, dpi=150)
     plt.close()
 
@@ -80,6 +83,9 @@ variables = ["bVtxCL", "kstTMass", "kstPt", "kstTrkmPt", "kstTrkmDCABS", "kstTrk
 "mumPt", "mupPt", "bCosAlphaBS", "bLBS", "bDCABS", "muLeadingPt", "muTrailingPt", "bLBSs", "bDCABSs", 
 "kstTrkmDCABSs", "kstTrkpDCABSs", "kstTrkpPtR", "kstTrkmPtR",  "muTrailingPtR", "muLeadingPtR", "mumuPtR", 
 "kstPtR","mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"]
+
+#variables = ['bTMass', 'bLBSs', 'kstPt', 'kstTrkpDCABSs', 'IsoPtR_dr04_sum', 'kstTrkmDCABSs', 'bVtxCL', 
+#       'bDCABSs', 'mupPt', 'mumPt', 'mumIsoPtR_dr04', 'mupIsoPtR_dr04', 'muTrailingPt', 'muLeadingPtR']
 
 # Build DataFrames from the trees using the specified variable set
 df_signal = build_dataframe(mcTree, variables)

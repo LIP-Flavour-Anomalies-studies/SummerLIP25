@@ -319,7 +319,7 @@ def main():
     try:
         
         variables = ['bLBSs', 'kstPt', 'kstTrkpDCABSs', 'IsoPtR_dr04_sum', 'kstTrkmDCABSs', 'bVtxCL', 
-        'bDCABSs', 'mupPt', 'mupIsoPtR_dr04', 'mumPt', 'mumIsoPtR_dr04', 'muTrailingPt', 'muLeadingPt', 'mumuPtR']
+        'bDCABSs', 'mupPt', 'mumPt', 'mumIsoPtR_dr04', 'mupIsoPtR_dr04', 'muTrailingPt', 'muLeadingPtR']
 
         dataset = ROOTDataset("NewData/ROOT_files/signal.root",
                             "NewData/ROOT_files//background.root",

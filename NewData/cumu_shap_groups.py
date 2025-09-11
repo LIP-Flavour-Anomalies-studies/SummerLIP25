@@ -27,7 +27,7 @@ sns.set_style("darkgrid")
 # ---------------- Configuration ----------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-corr_threshold = 0.80       # threshold for correlation-based grouping
+corr_threshold = 0.80      # threshold for correlation-based grouping
 cumulative_threshold = 0.95 # coverage threshold for cumulative importance
 batch_size = 1024           # batch size for validation loader
 
@@ -86,7 +86,7 @@ for v in variable_list:
 
 # ------------- Load model and data (no retraining) -------------
 input_size = len(variable_list)
-ckpt_path = "NewData/checkpoints/model_checkpoint.pth"
+ckpt_path = "NewData/checkpoints/large_model_checkpoint.pth"
 
 model = ClassificationModel(input_size=input_size).to(device)
 ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)

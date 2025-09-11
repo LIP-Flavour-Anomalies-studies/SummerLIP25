@@ -114,7 +114,7 @@ def main():
     input_mc = f"NewData/ROOT_files/mc_selected.root"
     
     variables = ['bLBSs', 'kstPt', 'kstTrkpDCABSs', 'IsoPtR_dr04_sum', 'kstTrkmDCABSs', 'bVtxCL', 
-        'bDCABSs', 'mupPt', 'mupIsoPtR_dr04', 'mumPt', 'mumIsoPtR_dr04', 'muTrailingPt', 'muLeadingPt', 'mumuPtR']
+        'bDCABSs', 'mupPt', 'mumPt', 'mumIsoPtR_dr04', 'mupIsoPtR_dr04', 'muTrailingPt', 'muLeadingPtR']
     
     save_outputs(input_data, checkpoint_path, variables)
     save_outputs(input_mc, checkpoint_path, variables)

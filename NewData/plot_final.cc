@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 
 void plot_final(){
 
-    double threshold = 0.8637274549098196;
+    double threshold = 0.785571142284569;
 
     // Create output directory if it doesn't exist
     fs::create_directories("NewData/Final_Plots/Data");

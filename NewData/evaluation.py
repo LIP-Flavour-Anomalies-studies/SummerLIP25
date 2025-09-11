@@ -190,7 +190,9 @@ def save_scalings(data_file, mc_file, output_file=None):
 
     # extract values
     nsig_data, _ = data_params["nsig"]
-    nsig_mc, _   = mc_params["nsig"]
+    nsig_mc_RT, _   = mc_params["RT"]["nsig"] 
+    nsig_mc_WT, _ = mc_params["WT"]["nsig"]
+    nsig_mc = nsig_mc_RT + nsig_mc_WT
 
     nbkg_SR_data = data_params["nbkg_SR"]
     nbkg_SB_data = data_params["nbkg_SB"]
@@ -267,6 +269,37 @@ def calculate_fom(targets, probabilities, s_scale, b_scale, output_dir="."):
     return best_thr, best_point
 
 
+def plot_combined_roc(targets, probabilities, output_dir="."):
+
+    # Model with complete set of variables
+    large_checkpoint = "NewData/checkpoints/large_model_checkpoint.pth"
+    large_model, large_test_loader = load_model(large_checkpoint)
+    large_targets, large_probs = get_targets_probabilities(large_model, large_test_loader)
+
+    fpr, tpr, _ = roc_curve(targets, probabilities)
+    roc_auc = auc(fpr, tpr)
+
+    fpr_large, tpr_large, _ = roc_curve(large_targets, large_probs)
+    roc_auc_large = auc(fpr_large, tpr_large)
+
+    plt.figure()
+    plt.plot(fpr, tpr, color='darkorange', lw=2,
+             label=f'Selected Set (AUC = {roc_auc:.4f})')
+    plt.plot(fpr_large, tpr_large, color='blue', lw=2,
+             label=f'Complete Set (AUC = {roc_auc_large:.4f})')
+    plt.scatter(best_point[0], best_point[1], color="black", label="Best Threshold")
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(loc="lower right")
+    plt.xlim(0, 0.2)
+    plt.ylim(0.7, 1)
+    save_path = os.path.join(output_dir, "combined_roc_curve.pdf")
+    plt.savefig(save_path)
+    plt.close()
+    print(f"ROC curve saved to {save_path}")
+
+
+
 if __name__ == "__main__":
    
     checkpoint_path = f"NewData/checkpoints/model_checkpoint.pth"
@@ -280,7 +313,7 @@ if __name__ == "__main__":
     targets, probabilities = get_targets_probabilities(model, test_loader)
 
     # Get signal and background scalings
-    s_scale, b_scale = save_scalings("NewData/scalings/fit_params_data.json", "NewData/scalings/fit_params_mc.json")
+    s_scale, b_scale = save_scalings("NewData/scalings/fit_params_data_RTWT.json", "NewData/scalings/fit_params_mc_RTWT.json")
 
     # Maximise FoM 
     best_thr, best_point = calculate_fom(targets, probabilities, s_scale, b_scale, output_dir)
@@ -289,5 +322,6 @@ if __name__ == "__main__":
     plot_roc_curve(targets, probabilities, output_dir, best_point)
     save_metrics_pdf(targets, probabilities, output_dir, best_thr)
     plot_loss_curve(checkpoint_path, output_dir)
+    #plot_combined_roc(targets, probabilities, output_dir)
 
     

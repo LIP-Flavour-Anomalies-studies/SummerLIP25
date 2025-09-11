@@ -23,7 +23,7 @@ void plot_SigBkg(){
     // --- Read s_left and s_right from JSON ---
     double s_left = 0, s_right = 0;
     {
-        std::ifstream jf("NewData/scalings/fit_params_mc.json");
+        std::ifstream jf("NewData/scalings/fit_params_mc_RTWT.json");
         json j;
         jf >> j;
         s_left = j["sb_left_max"];
