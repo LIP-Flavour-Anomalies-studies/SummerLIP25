@@ -108,10 +108,21 @@ void applic_prep(){
 
     // add event number for later selection multiple candidates per event
     Long64_t eventN;
+    Double_t genSignal;
+    Double_t tagB0;
     t_data->SetBranchAddress("eventN", &eventN);
+    t_data->SetBranchAddress("tagB0", &tagB0);
+
     t_mc->SetBranchAddress("eventN", &eventN);
+    t_mc->SetBranchAddress("genSignal", &genSignal);
+    t_mc->SetBranchAddress("tagB0", &tagB0);
+
     t_data_sel->Branch("eventN", &eventN);
+    t_data_sel->Branch("tagB0", &tagB0);
+
     t_mc_sel->Branch("eventN", &eventN);
+    t_mc_sel->Branch("genSignal", &genSignal);
+    t_mc_sel->Branch("tagB0", &tagB0);
 
 
     double mmin = 5;

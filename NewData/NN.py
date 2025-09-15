@@ -317,9 +317,17 @@ def train_model(model, early_stopping, train_loader, val_loader, criterion, opti
 
 def main():
     try:
+        #largest set 
+        #variables = ["bVtxCL", "kstTMass", "kstPt", "kstTrkmPt", "kstTrkmDCABS", "kstTrkpPt", "kstTrkpDCABS", 
+        #"mumPt", "mupPt", "bCosAlphaBS", "bLBS", "bDCABS", "muLeadingPt", "muTrailingPt", "bLBSs", "bDCABSs", 
+        #"kstTrkmDCABSs", "kstTrkpDCABSs", "kstTrkpPtR", "kstTrkmPtR",  "muTrailingPtR", "muLeadingPtR", "mumuPtR", 
+        #"kstPtR","mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"]
+
+        # shap chosen set
+        variables = ['bLBSs', 'kstPt', 'IsoPtR_dr04_sum', 'kstTrkpDCABSs', 'kstTrkmDCABSs', 'bVtxCL', 'mumPt', 
+        'muLeadingPt', 'bDCABSs', 'mupPt', 'mupIsoPtR_dr04', 'kstTrkpDCABS', 'mumuPtR']
+
         
-        variables = ['bLBSs', 'kstPt', 'kstTrkpDCABSs', 'IsoPtR_dr04_sum', 'kstTrkmDCABSs', 'bVtxCL', 
-        'bDCABSs', 'mupPt', 'mumPt', 'mumIsoPtR_dr04', 'mupIsoPtR_dr04', 'muTrailingPt', 'muLeadingPtR']
 
         dataset = ROOTDataset("NewData/ROOT_files/signal.root",
                             "NewData/ROOT_files//background.root",

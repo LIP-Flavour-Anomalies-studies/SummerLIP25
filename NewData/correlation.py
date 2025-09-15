@@ -84,8 +84,8 @@ variables = ["bVtxCL", "kstTMass", "kstPt", "kstTrkmPt", "kstTrkmDCABS", "kstTrk
 "kstTrkmDCABSs", "kstTrkpDCABSs", "kstTrkpPtR", "kstTrkmPtR",  "muTrailingPtR", "muLeadingPtR", "mumuPtR", 
 "kstPtR","mumIsoPtR_dr04", "mupIsoPtR_dr04", "kstTrkmIsoPtR_dr04", "kstTrkpIsoPtR_dr04", "IsoPtR_dr04_sum"]
 
-#variables = ['bTMass', 'bLBSs', 'kstPt', 'kstTrkpDCABSs', 'IsoPtR_dr04_sum', 'kstTrkmDCABSs', 'bVtxCL', 
-#       'bDCABSs', 'mupPt', 'mumPt', 'mumIsoPtR_dr04', 'mupIsoPtR_dr04', 'muTrailingPt', 'muLeadingPtR']
+#variables = ['bLBSs', 'kstPt', 'IsoPtR_dr04_sum', 'kstTrkpDCABSs', 'kstTrkmDCABSs', 'bVtxCL', 'mumPt', 
+#        'muLeadingPt', 'bDCABSs', 'mupPt', 'mupIsoPtR_dr04', 'kstTrkpDCABS', 'mumuPtR']
 
 # Build DataFrames from the trees using the specified variable set
 df_signal = build_dataframe(mcTree, variables)

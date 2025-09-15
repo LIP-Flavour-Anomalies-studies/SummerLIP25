@@ -16,13 +16,16 @@ namespace fs = std::filesystem;
 
 void plot_final(){
 
-    double threshold = 0.785571142284569;
+    // taken from evaluation results
+    double threshold = 0.81563126252505;
 
     // Create output directory if it doesn't exist
     fs::create_directories("NewData/Final_Plots/Data");
+    //fs::create_directories("NewData/Final_Plots/MC");
 
     // --- Open Files and Get Trees ---
     TFile *f = new TFile("NewData/ROOT_files/data_selected_ml_output.root", "read");
+    //TFile *f = new TFile("NewData/ROOT_files/mc_selected_ml_output.root", "read");
 	TTree *t = (TTree*)f->Get("Tdata");
 
     // --- Declare variables ---
@@ -228,6 +231,7 @@ void plot_final(){
         if (st2) st2->Draw();
 
         c->SaveAs(Form("NewData/Final_Plots/Data/%s.pdf", name.c_str()));
+        //c->SaveAs(Form("NewData/Final_Plots/MC/%s.pdf", name.c_str()));
 
         delete c;
     }

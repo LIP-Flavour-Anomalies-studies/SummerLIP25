@@ -74,9 +74,9 @@ pip install -r requirements.txt
 2. Activate environment
 3. Run `root NewData/bMass_data.cc` 
     - Checks bMass variable and applies a few manual cuts (were based on initial comparison plots).
-4. Run `python NewData/fit_v0.py` 
-    - Fits a double gaussian to MC and extracts sideband values (3 sigma away from mean).
-    - Fits double gaussian and exponential to data (after manual cuts and peak is visible).
+4. Run `python NewData/fit_WTRT.py` 
+    - Fits a Gaussian+CB to RT and WT in MC and extracts sideband values (3 sigma away from mean).
+    - Fits RT and WT fixed MC signal and exponential to data (after manual cuts and peak is visible).
     - Applying MC sideband values to data fit, determines number of backgorund events in each region.
     - All fitting parameters, sideband and event values are saved in JSON files (to later scale FoM).
 5. Run `root NewData/MLprep.cc` 
@@ -112,6 +112,9 @@ pip install -r requirements.txt
     - Get best threshold from the output of 11.
     - Also checks if there exist multiple B0 candidates per event. 
     - If so, only fills histograms with the candidate with highest ML score per event.
+15. Run `python NewData/final_fit.py`
+    - Fits B0 mass spectrum after applying threshold to ML output.
+    - Uses same method as the initial WT/RT on MC.
 
 
 ## Project Structure & Description

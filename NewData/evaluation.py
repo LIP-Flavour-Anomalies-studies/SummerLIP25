@@ -322,6 +322,6 @@ if __name__ == "__main__":
     plot_roc_curve(targets, probabilities, output_dir, best_point)
     save_metrics_pdf(targets, probabilities, output_dir, best_thr)
     plot_loss_curve(checkpoint_path, output_dir)
-    #plot_combined_roc(targets, probabilities, output_dir)
+    plot_combined_roc(targets, probabilities, output_dir)
 
     
