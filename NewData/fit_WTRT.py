@@ -24,325 +24,406 @@ import json
 import numpy as np
 from scipy.stats import chisquare
 
-def fit_mc(WT_double=False):
-    """Fit MC signal WR and RT (2 double Gaussian). Save params for later use and plot."""
-
+def fit_mc_RT_only():
+    """Fit to only the RT of the MC(CB+Gauss) and save RT-only plot.."""
     mmin, mmax = 5.0, 5.6
-
     f = TFile.Open("/lstore/cms/boletti/Run3-ntuples/ntuple_flat_22Jpsi.root")
-    h   = TH1F("h",   "",  100, mmin, mmax)
-    h_RT = TH1F("h_RT", "", 100, mmin, mmax)
-    h_WT = TH1F("h_WT", "", 100, mmin, mmax)
+    h_RT = TH1F("h_RT_only", "", 100, mmin, mmax)
 
-    # --- Filling the histogram with the relevant data ---
-    tree = f.Get("ntuple")
-    for i in range(tree.GetEntries()):
-        tree.GetEntry(i)
-
-        if tree.tagB0 == 1:
-            mass = tree.bMass
-        else:
-            mass = tree.bBarMass
-
-        if (mass < mmin) or (mass > mmax): 
+    t = f.Get("ntuple")
+    for i in range(t.GetEntries()):
+        t.GetEntry(i)
+        mass = t.bMass if t.tagB0 == 1 else t.bBarMass
+        if mass < mmin or mass > mmax:
             continue
-        
-        # truth matching
-        if (tree.truthMatchMum == 0 or tree.truthMatchMup == 0 or 
-            tree.truthMatchTrkm == 0 or tree.truthMatchTrkp == 0):
+        # same data cuts
+        if t.bVtxCL < 0.2: continue
+        if t.bCosAlphaBS < 0.9955: continue
+        if t.bLBS < 0.05: continue
+        # truth match
+        if (t.truthMatchMum == 0 or t.truthMatchMup == 0 or
+            t.truthMatchTrkm == 0 or t.truthMatchTrkp == 0):
             continue
-
-        # WT and RT
-        if tree.tagB0 == 1 and tree.genSignal == 1:
+        # RT: tag e genSignal com o mesmo flavour
+        if (t.tagB0 == 1 and t.genSignal == 1) or (t.tagB0 == 0 and t.genSignal == 2):
             h_RT.Fill(mass)
-        elif tree.tagB0 == 0 and tree.genSignal == 2:
-            h_RT.Fill(mass)
-        else:
-            h_WT.Fill(mass)
 
-        h.Fill(mass)
-
-    # --- RooFit objects --- 
     mass = RooRealVar("mass", "B^{0} mass", mmin, mmax, "GeV/c^{2}")
-    args = RooArgList(mass)
-    dh_RT = RooDataHist("dh_RT", "dh_RT", args , h_RT)
-    dh_WT = RooDataHist("dh_WT", "dh_WT", args , h_WT)
-    dh = RooDataHist("dh", "dh", args, h)  # total
+    dh_RT = RooDataHist("dh_RT_only", "dh_RT_only", RooArgList(mass), h_RT)
 
-    # --- Signal model: Double gaussian for RT ---
-    mean = RooRealVar("mean", "mean", 5.28, 5.2, 5.35)
+    # RT model = Crystal-Ball + Gaussian (shared mean)
+    mean     = RooRealVar("mean_RT",    "mean_RT",    5.28, 5.20, 5.35)
+    sigmaCB  = RooRealVar("sigmaCB_RT", "sigmaCB_RT", 0.015, 0.006, 0.040)  # ~15 MeV
+    alpha_RT = RooRealVar("alpha_RT",   "alpha_RT",   1.5,   0.8,   3.0)
+    n_RT     = RooRealVar("n_RT",       "n_RT",       3.0,   1.5,   15.0)
+    cb_RT    = RooCBShape("cb_RT_only", "cb_RT_only", mass, mean, sigmaCB, alpha_RT, n_RT)
 
-    sigma1_RT = RooRealVar("sigma1_RT", "sigma1_RT", 0.01, 0., 0.2)
-    sigma2_RT = RooRealVar("sigma2_RT", "sigma2_RT", 0.03, 0., 0.2)
-    frac_RT   = RooRealVar("frac_RT",   "frac_RT",   0.6,  0., 1.0)
+    sigmaG   = RooRealVar("sigmaG_RT",  "sigmaG_RT",  0.030, 0.012, 0.080)  # broad component
+    gaus_RT  = RooGaussian("gaus_RT_only","gaus_RT_only", mass, mean, sigmaG)
 
-    g1_RT = RooGaussian("g1_RT", "Gauss1 RT", mass, mean, sigma1_RT)
-    g2_RT = RooGaussian("g2_RT", "Gauss2 RT", mass, mean, sigma2_RT)
-    signal_RT = RooAddPdf("signal_RT", "DoubleGauss RT", RooArgList(g1_RT, g2_RT), RooArgList(frac_RT))
-    nsig_RT = RooRealVar("nsig_RT", "N signal RT", dh_RT.sumEntries(), 0., 2*dh_RT.sumEntries())
+    frac_CB  = RooRealVar("frac_CB_RT", "frac_CB_RT", 0.70,  0.30,  0.98)   # CB fraction in RT
+    sig      = RooAddPdf("sig_RT_only", "sig_RT_only", RooArgList(cb_RT, gaus_RT), RooArgList(frac_CB))
+    # <<< CHANGED
 
-    model_RT = RooAddPdf("model_RT", "RT only", RooArgList(signal_RT), RooArgList(nsig_RT))
-    model_RT.fitTo(dh_RT, RooFit.Extended(True))
-    
-    # --- WT: (single() Gaussian ---
-    if WT_double:
-        sigma1_WT = RooRealVar("sigma1_WT", "sigma1_WT", 0.02, 0., 0.1)
-        sigma2_WT = RooRealVar("sigma2_WT", "sigma2_WT", 0.05, 0., 0.1)
-        frac_WT   = RooRealVar("frac_WT", "frac_WT", 0.5, 0., 1.0)
-        g1_WT = RooGaussian("g1_WT", "Gauss1 WT", mass, mean, sigma1_WT)
-        g2_WT = RooGaussian("g2_WT", "Gauss2 WT", mass, mean, sigma2_WT)
-        signal_WT = RooAddPdf("signal_WT", "DoubleGauss WT", RooArgList(g1_WT, g2_WT), RooArgList(frac_WT))
-    else:
-        sigma_WT = RooRealVar("sigma_WT", "sigma_WT", 0.03, 0., 0.1)
-        signal_WT = RooGaussian("signal_WT", "WT Gaussian", mass, mean, sigma_WT)
+    nrt = RooRealVar("nrt_only", "nrt_only", dh_RT.sumEntries(), 0., 2*dh_RT.sumEntries())
+    model = RooAddPdf("model_RT_only", "model_RT_only", RooArgList(sig), RooArgList(nrt))
 
-    nsig_WT = RooRealVar("nsig_WT", "N signal WT", dh_WT.sumEntries(), 0., 2*dh_WT.sumEntries())
-    model_WT = RooAddPdf("model_WT", "WT only", RooArgList(signal_WT), RooArgList(nsig_WT))
-    # Fit WT outside RT-dominated region to avoid pulling the mean
-    mass.setRange("WT_fit_range", mmin, mean.getVal() - 3*sigma1_RT.getVal())
-    model_WT.fitTo(dh_WT, RooFit.Extended(True), RooFit.Range("WT_fit_range"))
+    model.fitTo(dh_RT, RooFit.Extended(True))
 
-    # --- Total signal: RT + WT ---
-    model = RooAddPdf("model", "RT+WT", RooArgList(signal_RT, signal_WT), RooArgList(nsig_RT, nsig_WT))
-
-    # --- Fit --- 
-    model.fitTo(dh, RooFit.Extended(True))
-    fitResult = model.fitTo(dh, RooFit.Extended(True), RooFit.Save(True), RooFit.Strategy(2))
-    fitResult.Print("v")
-    print("status, covQual:", fitResult.status(), fitResult.covQual())
-
-    # --- Effective sigmas ---
-    sigma_eff_RT = np.sqrt(frac_RT.getVal()*sigma1_RT.getVal()**2 + (1-frac_RT.getVal())*sigma2_RT.getVal()**2)
-    if WT_double:
-        sigma_eff_WT = np.sqrt(frac_WT.getVal()*sigma1_WT.getVal()**2 + (1-frac_WT.getVal())*sigma2_WT.getVal()**2)
-        sigma_eff_total = np.sqrt((nsig_RT.getVal()*sigma_eff_RT**2 + nsig_WT.getVal()*sigma_eff_WT**2) / 
-                              (nsig_RT.getVal() + nsig_WT.getVal()))
-    else:
-        sigma_eff_total = np.sqrt((nsig_RT.getVal()*sigma_eff_RT**2 + nsig_WT.getVal()*sigma_WT.getVal()**2) / 
-                              (nsig_RT.getVal() + nsig_WT.getVal()))
-
-    # --- Plot ---
     frame = mass.frame()
-    dh.plotOn(frame, RooFit.Name("dh"))
-    model.plotOn(frame, RooFit.Name("model"))
-    model.plotOn(frame, RooFit.Components("signal_RT"),
+    dh_RT.plotOn(frame, RooFit.Name("data_RT"))
+    model.plotOn(frame, RooFit.Name("fit_RT"))
+    model.plotOn(frame, RooFit.Components("sig_RT_only"),
                  RooFit.LineStyle(ROOT.kDashed), RooFit.LineColor(ROOT.kRed),
-                 RooFit.Name("RT"))
-    model.plotOn(frame, RooFit.Components("signal_WT"),
-                 RooFit.LineStyle(ROOT.kDashed), RooFit.LineColor(ROOT.kGreen+2),
-                 RooFit.Name("WT"))
-    
+                 RooFit.Name("sigcomp_RT"))
+
     c = ROOT.TCanvas()
-    frame.Draw()
-    frame.SetTitle("")
+    frame.Draw(); frame.SetTitle("")
+    leg = TLegend(0.65,0.6,0.88,0.84); leg.SetBorderSize(0); leg.SetTextSize(0.03)
+    leg.AddEntry(frame.findObject("data_RT"), "MC (RT subset)", "lep")
+    leg.AddEntry(frame.findObject("fit_RT"),  "Global fit", "l")
+    leg.Draw()
 
-    legend = TLegend(0.65, 0.6, 0.88, 0.85)
-    legend.SetBorderSize(0)
-    legend.SetTextFont(40)
-    legend.SetTextSize(0.03)
-    legend.AddEntry(frame.findObject("dh"), "MC", "lep")
-    legend.AddEntry(frame.findObject("RT"), "RT signal", "l")
-    legend.AddEntry(frame.findObject("WT"), "WT signal", "l")
-    legend.AddEntry(frame.findObject("model"), "Global fit", "l")
-    legend.Draw()
-
-    # Fit results
-    L = TLatex()
-    L.SetNDC()
-    L.SetTextSize(0.02)
-    y_start, step = 0.85, 0.035
-    
-   
-    L.DrawLatex(0.15, y_start,       ROOT.Form("Mean (shared): %6.5f #pm %6.5f GeV/c^{2}" % (mean.getVal(), mean.getError())))
-    # RT parameters
-    L.DrawLatex(0.15, y_start-step,  ROOT.Form("N_{RT}: %.0f #pm %.0f" % (nsig_RT.getVal(), nsig_RT.getError())))
-    L.DrawLatex(0.15, y_start-2*step,ROOT.Form("#sigma_{1RT}: %6.2f #pm %6.2f MeV/c^{2}" % (sigma1_RT.getVal()*1000, sigma1_RT.getError()*1000)))
-    L.DrawLatex(0.15, y_start-3*step,ROOT.Form("#sigma_{2RT}: %6.2f #pm %6.2f MeV/c^{2}" % (sigma2_RT.getVal()*1000, sigma2_RT.getError()*1000)))
-    L.DrawLatex(0.15, y_start-4*step,ROOT.Form("c_{RT}: %.3f #pm %.3f" % (frac_RT.getVal(), frac_RT.getError())))
-    # WT parameters
-    L.DrawLatex(0.15, y_start-5*step,ROOT.Form("N_{WT}: %.0f #pm %.0f" % (nsig_WT.getVal(), nsig_WT.getError())))
-    if WT_double:
-        L.DrawLatex(0.15, y_start-6*step,ROOT.Form("#sigma_{1WT}: %6.2f #pm %6.2f MeV/c^{2}" % (sigma1_WT.getVal()*1000, sigma1_WT.getError()*1000)))
-        L.DrawLatex(0.15, y_start-7*step,ROOT.Form("#sigma_{2WT}: %6.2f #pm %6.2f MeV/c^{2}" % (sigma2_WT.getVal()*1000, sigma2_WT.getError()*1000)))
-        L.DrawLatex(0.15, y_start-8*step,ROOT.Form("c_{WT}: %.3f #pm %.3f" % (frac_WT.getVal(), frac_WT.getError())))
-        L.DrawLatex(0.15, y_start-9*step,ROOT.Form("#sigma_{eff}: %6.2f" % (sigma_eff_total*1000)))
-    else:
-        L.DrawLatex(0.15, y_start-6*step,ROOT.Form("#sigma_{WT}: %6.2f #pm %6.2f MeV/c^{2}" % (sigma_WT.getVal()*1000, sigma_WT.getError()*1000)))
-        L.DrawLatex(0.15, y_start-7*step,ROOT.Form("#sigma_{eff}: %6.2f" % (sigma_eff_total*1000)))
-    
-
-    # Compute chi2 manually 
-    chi2 = 0.0
     mass_set = RooArgSet(mass)
-    for i in range(1, h.GetNbinsX() + 1):  # ROOT histogram bins start at 1
-        observed = h.GetBinContent(i)
-        error = h.GetBinError(i)
-        if error == 0:  # avoid division by zero
-            continue
-        x_val = h.GetBinCenter(i)
-        mass.setVal(x_val)
-        expected = model.getVal(mass_set) * h.GetBinWidth(i) * dh.sumEntries()  # scale by bin width & entries
-        chi2 += (observed - expected)**2 / (error**2)
+    chi2 = 0.0
+    for iB in range(1, h_RT.GetNbinsX()+1):
+        obs = h_RT.GetBinContent(iB)
+        err = h_RT.GetBinError(iB)
+        if err == 0: continue
+        mass.setVal(h_RT.GetBinCenter(iB))
+        exp = model.getVal(mass_set) * h_RT.GetBinWidth(iB) * dh_RT.sumEntries()
+        chi2 += (obs-exp)**2/err**2
 
-    if WT_double:
-        variables = 9 # free parameters
-    else:
-        variables = 7
+    # free shape parameters:mean, sigmaCB, alpha, n, frac_CB, sigmaG 
+    ndf = h_RT.GetNbinsX() - 5
 
-    ndf = h.GetNbinsX() - variables
-    chi2_ndf = chi2 / ndf
-    if WT_double:
-        L.DrawLatex(0.15, y_start - 10*step, ROOT.Form("#chi^{2}/ndf: %.2f" % chi2_ndf))
-    else:
-        L.DrawLatex(0.15, y_start - 8*step, ROOT.Form("#chi^{2}/ndf: %.2f" % chi2_ndf))
+    L = TLatex(); L.SetNDC(); L.SetTextSize(0.03)
+    L.DrawLatex(0.15,0.86, f"#chi^{{2}}/ndf: {chi2/ndf:.2f}")
 
-    # --- Sidebands using total sigma ---
-    sb_left_min, sb_left_max = mmin, mean.getVal() - 2*sigma_eff_total
-    sb_right_min, sb_right_max = mean.getVal() + 2*sigma_eff_total, mmax
-
-    # Save MC parameters
-    # --- Save params ---
-    if WT_double:
-        params = {
-            "mean": (mean.getVal(), mean.getError()),
-            "RT": {
-                "sigma1": (sigma1_RT.getVal(), sigma1_RT.getError()),
-                "sigma2": (sigma2_RT.getVal(), sigma2_RT.getError()),
-                "frac":   (frac_RT.getVal(), frac_RT.getError()),
-                "nsig":   (nsig_RT.getVal(), nsig_RT.getError())
-            },
-            "WT": {
-                "sigma1": (sigma1_WT.getVal(), sigma1_WT.getError()),
-                "sigma2": (sigma2_WT.getVal(), sigma2_WT.getError()),
-                "frac":   (frac_WT.getVal(), frac_WT.getError()),
-                "nsig":   (nsig_WT.getVal(), nsig_WT.getError())
-            },
-            "chi2_ndf": chi2_ndf,
-            "sigma_eff_total": sigma_eff_total,
-            "sb_left_min": sb_left_min, "sb_left_max": sb_left_max,
-            "sb_right_min": sb_right_min, "sb_right_max": sb_right_max
-        }
-    else:
-        params = {
-            "mean": (mean.getVal(), mean.getError()),
-            "RT": {
-                "sigma1": (sigma1_RT.getVal(), sigma1_RT.getError()),
-                "sigma2": (sigma2_RT.getVal(), sigma2_RT.getError()),
-                "frac":   (frac_RT.getVal(), frac_RT.getError()),
-                "nsig":   (nsig_RT.getVal(), nsig_RT.getError())
-            },
-            "WT": {
-                "sigma": (sigma_WT.getVal(), sigma_WT.getError()),
-                "nsig":  (nsig_WT.getVal(), nsig_WT.getError())
-            },
-            "chi2_ndf": chi2_ndf,
-            "sigma_eff_total": sigma_eff_total,
-            "sb_left_min": sb_left_min, "sb_left_max": sb_left_max,
-            "sb_right_min": sb_right_min, "sb_right_max": sb_right_max
-        }
-    
-    os.makedirs("NewData/scalings", exist_ok=True)
-    with open("NewData/scalings/fit_params_mc_RTWT.json", "w") as fout:
-        json.dump(params, fout, indent=4)
-
-    c.Draw()
-    c.SaveAs("NewData/bMassPlots/fit_mc_RTWT.pdf")
+    os.makedirs("NewData/bMassPlots", exist_ok=True)
+    c.SaveAs("NewData/bMassPlots/fit_mc_RT_only.pdf")
     f.Close()
 
 
+def fit_mc_WT_only():
+    """Fit to only the WT of the MC (CB+Gauss) and saves WT-only plot+ WT fraction."""
+    mmin, mmax = 5.0, 5.6
+    f = TFile.Open("/lstore/cms/boletti/Run3-ntuples/ntuple_flat_22Jpsi.root")
+    h_RT = TH1F("h_RT_tmp",   "", 100, mmin, mmax)
+    h_WT = TH1F("h_WT_only", "", 100, mmin, mmax)
+
+    t = f.Get("ntuple")
+    nRT = 0.0; nWT = 0.0
+    for i in range(t.GetEntries()):
+        t.GetEntry(i)
+        mass = t.bMass if t.tagB0 == 1 else t.bBarMass
+        if mass < mmin or mass > mmax: continue
+        # same data cuts
+        if t.bVtxCL < 0.2: continue
+        if t.bCosAlphaBS < 0.9955: continue
+        if t.bLBS < 0.05: continue
+        # truth match
+        if (t.truthMatchMum == 0 or t.truthMatchMup == 0 or
+            t.truthMatchTrkm == 0 or t.truthMatchTrkp == 0): continue
+
+        if (t.tagB0 == 1 and t.genSignal == 1) or (t.tagB0 == 0 and t.genSignal == 2):
+            h_RT.Fill(mass); nRT += 1.0
+        else:
+            h_WT.Fill(mass); nWT += 1.0
+
+    fWT = nWT / (nWT + nRT) if (nWT+nRT)>0 else 0.0
+    print(f"[MC] mistag fraction WT = {fWT:.3f}  ({nWT:.0f}/{(nWT+nRT):.0f})")
+
+    mass = RooRealVar("mass", "B^{0} mass", mmin, mmax, "GeV/c^{2}")
+    dh_WT = RooDataHist("dh_WT_only", "dh_WT_only", RooArgList(mass), h_WT)
+
+    # WT model = Crystal-Ball (tail) + Gaussian (peak) 
+    mean     = RooRealVar("mean_WT",   "mean_WT",   5.28, 5.24, 5.32)   
+    # broad CB for tail
+    sigmaCB  = RooRealVar("sigmaCB_WT","sigmaCB_WT",0.055, 0.020, 0.120)
+    alpha_WT = RooRealVar("alpha_WT",  "alpha_WT",  1.5,   0.6,   3.5)
+    n_WT     = RooRealVar("n_WT",      "n_WT",      2.0,   1.2,   10.0)
+    cb       = RooCBShape("cb_WT", "cb_WT", mass, mean, sigmaCB, alpha_WT, n_WT)
+
+    # narrow Gauss for peak
+    sigmaG   = RooRealVar("sigmaG_WT","sigmaG_WT", 0.020, 0.008, 0.050)  # 8–50 MeV
+    gaus     = RooGaussian("gaus_WT","gaus_WT", mass, mean, sigmaG)
+
+    fracCB   = RooRealVar("fracCB_WT","fracCB_WT", 0.70, 0.0, 1.0)       # fração na CB (cauda)
+    sig      = RooAddPdf("sig_WT_only", "sig_WT_only",
+                         RooArgList(cb, gaus), RooArgList(fracCB))
+    # =====================================================================
+
+    nwt   = RooRealVar("nwt_only", "nwt_only", dh_WT.sumEntries(), 0., 2*dh_WT.sumEntries())
+    model = RooAddPdf("model_WT_only", "model_WT_only", RooArgList(sig), RooArgList(nwt))
+    model.fitTo(dh_WT, RooFit.Extended(True))
+
+    frame = mass.frame()
+    dh_WT.plotOn(frame, RooFit.Name("data_WT"))
+    model.plotOn(frame, RooFit.Name("fit_WT"))
+
+    c = ROOT.TCanvas()
+    frame.Draw(); frame.SetTitle("")
+    leg = TLegend(0.65,0.6,0.88,0.84); leg.SetBorderSize(0); leg.SetTextSize(0.03)
+    leg.AddEntry(frame.findObject("data_WT"), "MC (WT subset)", "lep")
+    leg.AddEntry(frame.findObject("fit_WT"),  "Global fit", "l")
+    leg.Draw()
+
+    mass_set = RooArgSet(mass)
+    chi2 = 0.0
+    for iB in range(1, h_WT.GetNbinsX()+1):
+        obs = h_WT.GetBinContent(iB); err = h_WT.GetBinError(iB)
+        if err == 0: continue
+        mass.setVal(h_WT.GetBinCenter(iB))
+        exp = model.getVal(mass_set) * h_WT.GetBinWidth(iB) * dh_WT.sumEntries()
+        chi2 += (obs-exp)**2/err**2
+
+    # free shape parameters: mean, sigmaCB, alpha, n, sigmaG, fracCB  -> 6
+    ndf = h_WT.GetNbinsX() - 6
+    L = TLatex(); L.SetNDC(); L.SetTextSize(0.03)
+    L.DrawLatex(0.15,0.86, f"#chi^{{2}}/ndf: {chi2/ndf:.2f}")
+    L.DrawLatex(0.15,0.80, f"WT fraction (MC): {100.0*fWT:.1f}%")
+
+    os.makedirs("NewData/bMassPlots", exist_ok=True)
+    c.SaveAs("NewData/bMassPlots/fit_mc_WT_only.pdf")
+    f.Close()
+
+def fit_mc():
+    """Fit MC RT and WT with CB+Gauss (shared mean). Save params + plot."""
+    mmin, mmax = 5.0, 5.6
+
+    f = TFile.Open("/lstore/cms/boletti/Run3-ntuples/ntuple_flat_22Jpsi.root")
+    h   = TH1F("h",   "", 100, mmin, mmax)
+    h_RT = TH1F("h_RT","", 100, mmin, mmax)
+    h_WT = TH1F("h_WT","", 100, mmin, mmax)
+
+    t = f.Get("ntuple")
+    for i in range(t.GetEntries()):
+        t.GetEntry(i)
+        mass = t.bMass if t.tagB0 == 1 else t.bBarMass
+        if mass < mmin or mass > mmax: continue
+        # same cuts as data
+        if t.bVtxCL < 0.2: continue
+        if t.bCosAlphaBS < 0.9955: continue
+        if t.bLBS < 0.05: continue
+        # truth match
+        if (t.truthMatchMum == 0 or t.truthMatchMup == 0 or
+            t.truthMatchTrkm == 0 or t.truthMatchTrkp == 0): continue
+
+        # split RT/WT
+        if (t.tagB0 == 1 and t.genSignal == 1) or (t.tagB0 == 0 and t.genSignal == 2):
+            h_RT.Fill(mass)
+        else:
+            h_WT.Fill(mass)
+        h.Fill(mass)
+
+    mass = RooRealVar("mass","B^{0} mass", mmin, mmax, "GeV/c^{2}")
+    dh   = RooDataHist("dh","dh", RooArgList(mass), h)
+    dhRT = RooDataHist("dhRT","dhRT", RooArgList(mass), h_RT)
+    dhWT = RooDataHist("dhWT","dhWT", RooArgList(mass), h_WT)
+
+    # ----- shared mean -----
+    mean = RooRealVar("mean","mean", 5.28, 5.24, 5.32)
+
+    # ===== RT : CB + Gauss =====
+    sigmaCB_RT  = RooRealVar("sigmaCB_RT","sigmaCB_RT", 0.014, 0.006, 0.040)
+    alpha_RT    = RooRealVar("alpha_RT","alpha_RT",     1.5,   0.8,   3.0)
+    n_RT        = RooRealVar("n_RT","n_RT",             3.0,   1.2,   15.0)
+    cb_RT       = RooCBShape("cb_RT","cb_RT", mass, mean, sigmaCB_RT, alpha_RT, n_RT)
+
+    sigmaG_RT   = RooRealVar("sigmaG_RT","sigmaG_RT",   0.028, 0.010, 0.080)
+    g_RT        = RooGaussian("g_RT","g_RT", mass, mean, sigmaG_RT)
+
+    fracCB_RT   = RooRealVar("fracCB_RT","fracCB_RT",   0.70,  0.30,  0.98)
+    sigRT       = RooAddPdf("sigRT","sigRT", RooArgList(cb_RT, g_RT), RooArgList(fracCB_RT))
+    nRT         = RooRealVar("nRT","nRT", dhRT.sumEntries(), 0., 2*dhRT.sumEntries())
+    modelRT     = RooAddPdf("modelRT","modelRT", RooArgList(sigRT), RooArgList(nRT))
+    modelRT.fitTo(dhRT, RooFit.Extended(True))
+
+    # ===== WT : CB + Gauss (broader) =====
+    sigmaCB_WT  = RooRealVar("sigmaCB_WT","sigmaCB_WT", 0.055, 0.020, 0.120)
+    alpha_WT    = RooRealVar("alpha_WT","alpha_WT",     1.5,   0.6,   3.5)
+    n_WT        = RooRealVar("n_WT","n_WT",             2.0,   1.2,   10.0)
+    cb_WT       = RooCBShape("cb_WT","cb_WT", mass, mean, sigmaCB_WT, alpha_WT, n_WT)
+
+    sigmaG_WT   = RooRealVar("sigmaG_WT","sigmaG_WT",   0.020, 0.008, 0.050)
+    g_WT        = RooGaussian("g_WT","g_WT", mass, mean, sigmaG_WT)
+
+    fracCB_WT   = RooRealVar("fracCB_WT","fracCB_WT",   0.70,  0.10,  0.99)
+    sigWT       = RooAddPdf("sigWT","sigWT", RooArgList(cb_WT, g_WT), RooArgList(fracCB_WT))
+    nWT         = RooRealVar("nWT","nWT", dhWT.sumEntries(), 0., 2*dhWT.sumEntries())
+    modelWT     = RooAddPdf("modelWT","modelWT", RooArgList(sigWT), RooArgList(nWT))
+    modelWT.fitTo(dhWT, RooFit.Extended(True))
+
+    # ----- total (RT + WT) on full histogram -----
+    model = RooAddPdf("model","model", RooArgList(sigRT, sigWT), RooArgList(nRT, nWT))
+    model.fitTo(dh, RooFit.Extended(True))
+
+    # effective sigma (mixture, use core widths): σ_eff^2 ≈ w1 σ1^2 + w2 σ2^2
+    sigma_eff_RT = np.sqrt(fracCB_RT.getVal()*sigmaCB_RT.getVal()**2 +
+                           (1-fracCB_RT.getVal())*sigmaG_RT.getVal()**2)
+    sigma_eff_WT = np.sqrt(fracCB_WT.getVal()*sigmaCB_WT.getVal()**2 +
+                           (1-fracCB_WT.getVal())*sigmaG_WT.getVal()**2)
+    sigma_eff_total = np.sqrt((nRT.getVal()*sigma_eff_RT**2 + nWT.getVal()*sigma_eff_WT**2) /
+                              (nRT.getVal() + nWT.getVal()))
+
+    # sidebands from ±2 σ_eff_total
+    sb_left_min, sb_left_max   = mmin, mean.getVal() - 2*sigma_eff_total
+    sb_right_min, sb_right_max = mean.getVal() + 2*sigma_eff_total, mmax
+
+    # plot
+    frame = mass.frame()
+    dh.plotOn(frame, RooFit.Name("dh"))
+    model.plotOn(frame, RooFit.Name("model"))
+    model.plotOn(frame, RooFit.Components("sigRT"),
+                 RooFit.LineStyle(ROOT.kDashed), RooFit.LineColor(ROOT.kRed),
+                 RooFit.Name("RT"))
+    model.plotOn(frame, RooFit.Components("sigWT"),
+                 RooFit.LineStyle(ROOT.kDashed), RooFit.LineColor(ROOT.kGreen+2),
+                 RooFit.Name("WT"))
+    c = ROOT.TCanvas(); frame.Draw(); frame.SetTitle("")
+    leg = TLegend(0.65,0.6,0.88,0.85); leg.SetBorderSize(0); leg.SetTextSize(0.03)
+    leg.AddEntry(frame.findObject("dh"), "MC", "lep")
+    leg.AddEntry(frame.findObject("RT"), "RT (CB+G)", "l")
+    leg.AddEntry(frame.findObject("WT"), "WT (CB+G)", "l")
+    leg.AddEntry(frame.findObject("model"), "Global fit", "l")
+    leg.Draw()
+
+    # save params
+    fRT_val = nRT.getVal()/(nRT.getVal()+nWT.getVal()) if (nRT.getVal()+nWT.getVal())>0 else 0.7
+    params = {
+        "mean": (mean.getVal(), mean.getError()),
+        "RT": {
+            "sigmaCB": (sigmaCB_RT.getVal(), sigmaCB_RT.getError()),
+            "alpha":   (alpha_RT.getVal(),   alpha_RT.getError()),
+            "n":       (n_RT.getVal(),       n_RT.getError()),
+            "sigmaG":  (sigmaG_RT.getVal(),  sigmaG_RT.getError()),
+            "fracCB":  (fracCB_RT.getVal(),  fracCB_RT.getError()),
+            "nsig":    (nRT.getVal(),        nRT.getError())
+        },
+        "WT": {
+            "sigmaCB": (sigmaCB_WT.getVal(), sigmaCB_WT.getError()),
+            "alpha":   (alpha_WT.getVal(),   alpha_WT.getError()),
+            "n":       (n_WT.getVal(),       n_WT.getError()),
+            "sigmaG":  (sigmaG_WT.getVal(),  sigmaG_WT.getError()),
+            "fracCB":  (fracCB_WT.getVal(),  fracCB_WT.getError()),
+            "nsig":    (nWT.getVal(),        nWT.getError())
+        },
+        "sigma_eff_total": float(sigma_eff_total),
+        "sb_left_min": sb_left_min, "sb_left_max": sb_left_max,
+        "sb_right_min": sb_right_min, "sb_right_max": sb_right_max,
+        "fRT": float(fRT_val)
+    }
+    os.makedirs("NewData/scalings", exist_ok=True)
+    with open("NewData/scalings/fit_params_mc_RTWT.json","w") as fout:
+        json.dump(params, fout, indent=4)
+
+    c.SaveAs("NewData/bMassPlots/fit_mc_RTWT.pdf")
+    f.Close()
+
 def fit_data():
-    """Fit data with exponential + fixed signal from MC. Save params and plot."""
+    """
+    Fit to data: exponential background + signal (RT and WT) modeled with CB+Gauss,
+    fixed to MC parameters from NewData/scalings/fit_params_mc_RTWT.json.
+    Uses fixed RT fraction (from JSON or computed from MC yields) and a single floating Ns.
+    Saves plot in NewData/bMassPlots/fit_data_RTWT.pdf and results in
+    NewData/scalings/fit_params_data_RTWT.json.
+    """
+    # -------------------- setup & histogram --------------------
     mmin, mmax = 5.0, 5.6
 
     f = TFile.Open("/lstore/cms/boletti/Run3-ntuples/ntuple_flat_22F.root")
     h = TH1F("h_data", "", 100, mmin, mmax)
 
-    #Filling the histogram with the relevant data
-    tree = f.Get("ntuple")
-    for i in range(tree.GetEntries()):
-        tree.GetEntry(i)
-
-        if tree.tagB0 == 1:
-            mass = tree.bMass
-        elif tree.tagB0 == 0:
-            mass = tree.bBarMass
-
-        if (mass < mmin) or (mass > mmax): 
+    t = f.Get("ntuple")
+    for i in range(t.GetEntries()):
+        t.GetEntry(i)
+        mass = t.bMass if t.tagB0 == 1 else t.bBarMass
+        if (mass < mmin) or (mass > mmax):
             continue
-        
-        # selection cuts 
-        if tree.bVtxCL < 0.2: continue
-        if tree.bCosAlphaBS < 0.9955: continue
-        if tree.bLBS < 0.05: continue
-
+        # same cuts as used before
+        if t.bVtxCL < 0.2: continue
+        if t.bCosAlphaBS < 0.9955: continue
+        if t.bLBS < 0.05: continue
         h.Fill(mass)
 
     # RooFit dataset
     mass = RooRealVar("mass", "B^{0} mass", mmin, mmax, "GeV/c^{2}")
     dh = RooDataHist("dh_data", "dh_data", RooArgList(mass), h)
 
-    # Load MC params
+    # -------------------- load MC parameters --------------------
     with open("NewData/scalings/fit_params_mc_RTWT.json") as fmc:
-        mc_params = json.load(fmc)
+        mc = json.load(fmc)
 
-    # --- Fixed signal from MC---
-    # RT Signal
-    mean = RooRealVar("mean", "mean", mc_params["mean"][0])
-    mean.setConstant(True)
-    sigma1_RT = RooRealVar("sigma1_RT", "sigma1_RT", mc_params["RT"]["sigma1"][0])
-    sigma1_RT.setConstant(True)
-    sigma2_RT = RooRealVar("sigma2_RT", "sigma2_RT", mc_params["RT"]["sigma2"][0])
-    sigma2_RT.setConstant(True)
-    frac_RT = RooRealVar("frac_RT", "frac_RT", mc_params["RT"]["frac"][0])
-    frac_RT.setConstant(True)
+    # fixed mean
+    mean = RooRealVar("mean", "mean", mc["mean"][0]); mean.setConstant(True)
 
-    g1_RT = RooGaussian("g1_RT", "g1_RT", mass, mean, sigma1_RT)
-    g2_RT = RooGaussian("g2_RT", "g2_RT", mass, mean, sigma2_RT)
-    signal_RT = RooAddPdf("signal_RT", "signal_RT", RooArgList(g1_RT, g2_RT), RooArgList(frac_RT))
+    # ---- RT: CB + Gaussian (all fixed) ----
+    sigmaCB_RT = RooRealVar("sigmaCB_RT","sigmaCB_RT", mc["RT"]["sigmaCB"][0], 1e-5, 1.0); sigmaCB_RT.setConstant(True)
+    alpha_RT   = RooRealVar("alpha_RT",  "alpha_RT",  mc["RT"]["alpha"][0]);   alpha_RT.setConstant(True)
+    n_RT       = RooRealVar("n_RT",      "n_RT",      mc["RT"]["n"][0]);       n_RT.setConstant(True)
+    cb_RT      = RooCBShape("cb_RT", "cb_RT", mass, mean, sigmaCB_RT, alpha_RT, n_RT)
 
-    # WT Signal
-    sigma_WT = RooRealVar("sigma_WT", "sigma_WT", mc_params["WT"]["sigma"][0])
-    sigma_WT.setConstant(True)
-    signal_WT = RooGaussian("signal_WT", "signal_WT", mass, mean, sigma_WT)
+    sigmaG_RT  = RooRealVar("sigmaG_RT", "sigmaG_RT", mc["RT"]["sigmaG"][0], 1e-5, 1.0); sigmaG_RT.setConstant(True)
+    g_RT       = RooGaussian("g_RT", "g_RT", mass, mean, sigmaG_RT)
 
-    # Fix yields to MC 
-    nsig_RT = RooRealVar("nsig_RT", "nsig_RT", mc_params["RT"]["nsig"][0])
-    nsig_RT.setConstant(True)
-    nsig_WT = RooRealVar("nsig_WT", "nsig_WT", mc_params["WT"]["nsig"][0])
-    nsig_WT.setConstant(True)
+    fracCB_RT  = RooRealVar("fracCB_RT","fracCB_RT", mc["RT"]["fracCB"][0]);   fracCB_RT.setConstant(True)
+    sigRT      = RooAddPdf("sigRT", "sigRT", RooArgList(cb_RT, g_RT), RooArgList(fracCB_RT))
 
-    signal = RooAddPdf("signal", "signal", RooArgList(signal_RT, signal_WT), RooArgList(nsig_RT, nsig_WT))
+    # ---- WT: CB + Gaussian (all fixed) ----
+    sigmaCB_WT = RooRealVar("sigmaCB_WT","sigmaCB_WT", mc["WT"]["sigmaCB"][0], 1e-5, 1.0); sigmaCB_WT.setConstant(True)
+    alpha_WT   = RooRealVar("alpha_WT",  "alpha_WT",  mc["WT"]["alpha"][0]);   alpha_WT.setConstant(True)
+    n_WT       = RooRealVar("n_WT",      "n_WT",      mc["WT"]["n"][0]);       n_WT.setConstant(True)
+    cb_WT      = RooCBShape("cb_WT", "cb_WT", mass, mean, sigmaCB_WT, alpha_WT, n_WT)
 
-    # Background
+    sigmaG_WT  = RooRealVar("sigmaG_WT", "sigmaG_WT", mc["WT"]["sigmaG"][0], 1e-5, 1.0); sigmaG_WT.setConstant(True)
+    g_WT       = RooGaussian("g_WT", "g_WT", mass, mean, sigmaG_WT)
+
+    fracCB_WT  = RooRealVar("fracCB_WT","fracCB_WT", mc["WT"]["fracCB"][0]);   fracCB_WT.setConstant(True)
+    sigWT      = RooAddPdf("sigWT", "sigWT", RooArgList(cb_WT, g_WT), RooArgList(fracCB_WT))
+
+    # ---- RT/WT mixture with fixed fRT ----
+    if "fRT" in mc:
+        fRT_val = float(mc["fRT"])
+    else:
+        nrt = mc["RT"].get("nsig", [0.0])[0]
+        nwt = mc["WT"].get("nsig", [0.0])[0]
+        denom = (nrt + nwt) if (nrt + nwt) > 0 else 1.0
+        fRT_val = nrt / denom
+    fRT = RooRealVar("fRT", "fRT", fRT_val); fRT.setConstant(True)
+
+    signal = RooAddPdf("signal", "signal", RooArgList(sigRT, sigWT), RooArgList(fRT))
+
+    # -------------------- background + yields --------------------
     Lambda = RooRealVar("lambda", "lambda", -1.0, -10.0, 0.0)
     background = RooExponential("background", "background", mass, Lambda)
 
-    # Yields
     nsig = RooRealVar("nsig", "nsig", 0.5*dh.sumEntries(), 0., dh.sumEntries())
     nbkg = RooRealVar("nbkg", "nbkg", 0.5*dh.sumEntries(), 0., dh.sumEntries())
+
     model = RooAddPdf("model", "model", RooArgList(signal, background), RooArgList(nsig, nbkg))
 
-    # Fit
+    # -------------------- fit --------------------
     model.fitTo(dh, RooFit.Extended(True))
 
-    # Compute background yields in regions
-    sb_left_min, sb_left_max = mc_params["sb_left_min"], mc_params["sb_left_max"]
-    sb_right_min, sb_right_max = mc_params["sb_right_min"], mc_params["sb_right_max"]
-    
-    mass.setRange("SR", sb_left_max, sb_right_min)
-    mass.setRange("SB_left", sb_left_min, sb_left_max)
-    mass.setRange("SB_right", sb_right_min, sb_right_max)
+    # -------------------- sidebands from MC --------------------
+    sb_left_min  = mc["sb_left_min"]
+    sb_left_max  = mc["sb_left_max"]
+    sb_right_min = mc["sb_right_min"]
+    sb_right_max = mc["sb_right_max"]
 
-    # get normalized fractions (fraction of background PDF inside each region)
-    frac_SR = background.createIntegral(RooArgSet(mass), RooFit.NormSet(RooArgSet(mass)), RooFit.Range("SR")).getVal()
+    mass.setRange("SR",      sb_left_max,  sb_right_min)
+    mass.setRange("SB_left", sb_left_min,  sb_left_max)
+    mass.setRange("SB_right",sb_right_min, sb_right_max)
+
+    frac_SR      = background.createIntegral(RooArgSet(mass), RooFit.NormSet(RooArgSet(mass)), RooFit.Range("SR")).getVal()
     frac_SB_left = background.createIntegral(RooArgSet(mass), RooFit.NormSet(RooArgSet(mass)), RooFit.Range("SB_left")).getVal()
-    frac_SB_right = background.createIntegral(RooArgSet(mass), RooFit.NormSet(RooArgSet(mass)), RooFit.Range("SB_right")).getVal()
+    frac_SB_right= background.createIntegral(RooArgSet(mass), RooFit.NormSet(RooArgSet(mass)), RooFit.Range("SB_right")).getVal()
 
-    # expected background event counts in each region
     nbkg_SR = nbkg.getVal() * frac_SR
     nbkg_SB = nbkg.getVal() * (frac_SB_left + frac_SB_right)
 
-    # --- Plot ---
+    # -------------------- plot --------------------
     frame = mass.frame()
     dh.plotOn(frame, RooFit.Name("dh_data"))
     model.plotOn(frame, RooFit.Name("model"))
@@ -354,66 +435,60 @@ def fit_data():
                  RooFit.Name("sig"))
 
     c = ROOT.TCanvas()
-    frame.Draw()
-    frame.SetTitle("")
+    frame.Draw(); frame.SetTitle("")
 
-    legend = TLegend(0.65, 0.6, 0.88, 0.85)
-    legend.SetBorderSize(0)
-    legend.SetTextFont(40)
-    legend.SetTextSize(0.03)
-    legend.AddEntry(frame.findObject("dh_data"), "Data", "lep")
-    legend.AddEntry(frame.findObject("sig"), "Signal (MC shape)", "l")
-    legend.AddEntry(frame.findObject("bkg"), "Background (exp)", "l")
-    legend.AddEntry(frame.findObject("model"), "Global fit", "l")
-    legend.Draw()
+    leg = TLegend(0.65, 0.60, 0.88, 0.85)
+    leg.SetBorderSize(0); leg.SetTextFont(40); leg.SetTextSize(0.03)
+    leg.AddEntry(frame.findObject("dh_data"), "Data", "lep")
+    leg.AddEntry(frame.findObject("sig"),     "Signal (CB+Gauss)", "l")
+    leg.AddEntry(frame.findObject("bkg"),     "Background (exp)", "l")
+    leg.AddEntry(frame.findObject("model"),   "Global fit", "l")
+    leg.Draw()
 
-    L = TLatex()
-    L.SetNDC()
-    L.SetTextSize(0.02)
-    y_start, step = 0.85, 0.035
-    L.DrawLatex(0.15,y_start, ROOT.Form("Y_{S}: %.0f #pm %.0f events" % (nsig.getVal(),nsig.getError())))
-    L.DrawLatex(0.15,y_start - step, ROOT.Form("Y_{B}: %.0f #pm %.0f events" % (nbkg.getVal(),nbkg.getError())))
-    L.DrawLatex(0.15,y_start - 2*step, ROOT.Form("Mean: %5.4f #pm %5.4f GeV/c^{2}" % (mean.getVal(), mc_params["mean"][1])))
-    L.DrawLatex(0.15,y_start - 3*step, ROOT.Form("#lambda: %5.4f #pm %5.4f GeV^{-1}" % (Lambda.getVal(), Lambda.getError())))
-    #L.DrawLatex(0.15, y_start - 4*step, ROOT.Form("#sigma_{1fixed}: %5.4f #pm %5.4f MeV/c^{2}" % (sigma1.getVal()*1000, mc_params["sigma1"][1]*1000)))
-    #L.DrawLatex(0.15, y_start - 5*step, ROOT.Form("#sigma_{2fixed}: %5.4f #pm %5.4f MeV/c^{2}" % (sigma2.getVal()*1000, mc_params["sigma2"][1]*1000)))
-
-    # Compute chi2 manually
-    nbins = dh.numEntries()  # total number of bins
+    # -------------------- χ²/ndf --------------------
+    mass_set = RooArgSet(mass)
     chi2 = 0.0
-
-    for i in range(1, h.GetNbinsX() + 1):  # ROOT histogram bins start at 1
-        observed = h.GetBinContent(i)
-        error = h.GetBinError(i)
-        if error == 0:  # avoid division by zero
+    for iB in range(1, h.GetNbinsX()+1):
+        obs = h.GetBinContent(iB)
+        err = h.GetBinError(iB)
+        if err == 0: 
             continue
-        x_val = h.GetBinCenter(i)
-        mass.setVal(x_val)
-        expected = model.getVal(RooArgSet(mass)) * h.GetBinWidth(i) * dh.sumEntries()  # scale by bin width & entries
-        chi2 += (observed - expected)**2 / (error**2)
+        x = h.GetBinCenter(iB)
+        mass.setVal(x)
+        exp = model.getVal(mass_set) * h.GetBinWidth(iB) * dh.sumEntries()
+        chi2 += (obs - exp)**2 / (err**2)
 
-    variables = 3  # free parameters
-    ndf = h.GetNbinsX() - variables
-    chi2_ndf = chi2 / ndf
+    # free params in fit_data(): nsig, nbkg, lambda  -> 3
+    ndf = h.GetNbinsX() - 3
+    chi2_ndf = chi2 / ndf if ndf > 0 else 0.0
 
-    # Draw on plot
-    L.DrawLatex(0.15, y_start - 4*step, ROOT.Form("#chi^{2}/ndf: %.2f" % chi2_ndf))
+    # annotations
+    L = TLatex(); L.SetNDC(); L.SetTextSize(0.02)
+    y, step = 0.85, 0.035
+    L.DrawLatex(0.15, y,         f"Y_{{S}}: {nsig.getVal():.0f} #pm {nsig.getError():.0f}")
+    L.DrawLatex(0.15, y-step,    f"Y_{{B}}: {nbkg.getVal():.0f} #pm {nbkg.getError():.0f}")
+    L.DrawLatex(0.15, y-2*step,  f"Mean: {mean.getVal():5.4f} #pm {mc['mean'][1]:5.4f} GeV/c^{{2}}")
+    L.DrawLatex(0.15, y-3*step,  f"#lambda: {Lambda.getVal():5.4f} #pm {Lambda.getError():5.4f} GeV^{{-1}}")
+    L.DrawLatex(0.15, y-4*step,  f"f_{{RT}} (fixed): {100.0*fRT_val:.1f}%")
+    L.DrawLatex(0.15, y-5*step,  f"#chi^{{2}}/ndf: {chi2_ndf:.2f}")
 
-    c.Draw()
+    os.makedirs("NewData/bMassPlots", exist_ok=True)
     c.SaveAs("NewData/bMassPlots/fit_data_RTWT.pdf")
     f.Close()
 
-    # Save results
-    params = {
-        "nsig": (nsig.getVal(), nsig.getError()),
-        "nbkg": (nbkg.getVal(), nbkg.getError()),
-        "lambda": (Lambda.getVal(), Lambda.getError()),
+    # -------------------- save results --------------------
+    out = {
+        "nsig": [nsig.getVal(), nsig.getError()],
+        "nbkg": [nbkg.getVal(), nbkg.getError()],
+        "lambda": [Lambda.getVal(), Lambda.getError()],
+        "fRT_fixed": fRT_val,
         "nbkg_SR": nbkg_SR,
         "nbkg_SB": nbkg_SB,
         "chi2_ndf": chi2_ndf
     }
-    with open("NewData/scalings/fit_params_data_RTWT.json", "w") as fout:
-        json.dump(params, fout, indent=4)
+    os.makedirs("NewData/scalings", exist_ok=True)
+    with open("NewData/scalings/fit_params_data_RTWT.json", "w") as fo:
+        json.dump(out, fo, indent=4)
 
 
 
@@ -421,5 +496,7 @@ if __name__ == "__main__":
 
     os.makedirs("NewData/bMassPlots", exist_ok=True)
 
-    #fit_mc(WT_double=False)
-    fit_data()
+    fit_mc()   #ativar só este primeiro
+    #fit_data()
+    #fit_mc_RT_only()
+    #fit_mc_WT_only()
