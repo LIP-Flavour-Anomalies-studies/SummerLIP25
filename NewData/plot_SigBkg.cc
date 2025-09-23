@@ -167,6 +167,13 @@ void plot_SigBkg(){
 			h_sig[name]->Scale(1.0 / h_sig[name]->Integral());
 	}
 
+    // Vertical lines for specific plots
+    map<string, vector<double>> verticalLines = {
+        {"bVtxCL", {0.2}},       
+        {"bLBS", {0.05}},     
+        {"bCosAlphaBS", {0.9955}},
+    };
+    gStyle->SetOptStat(0);
 	// Draw histograms
 	for (const auto &name : variables){
 		TCanvas *c = new TCanvas(("c_" + name).c_str(), "");
@@ -192,31 +199,50 @@ void plot_SigBkg(){
 
         // Draw first histogram
         h_bkg[name]->Draw("HIST");
-        gPad->Update();
-        TPaveStats *st1 = (TPaveStats*)h_bkg[name]->FindObject("stats");
-        if (st1) {
-            st1->SetTextColor(kBlue);
-            st1->SetLineColor(kBlue);
-            st1->SetY1NDC(0.75);
-            st1->SetY2NDC(0.90);
-        }
+        //gPad->Update();
+        //TPaveStats *st1 = (TPaveStats*)h_bkg[name]->FindObject("stats");
+        //if (st1) {
+          //  st1->SetTextColor(kBlue);
+           // st1->SetLineColor(kBlue);
+            //st1->SetY1NDC(0.75);
+            //st1->SetY2NDC(0.90);
+        //}
         // Draw second histogram separately to generate stats
-        TCanvas *tmp = new TCanvas(); // temp hidden canvas
-        h_sig[name]->Draw("HIST");
-        gPad->Update();
-        TPaveStats *st2 = (TPaveStats*)h_sig[name]->FindObject("stats");
-        if (st2) {
-            st2 = (TPaveStats*)st2->Clone(); // clone so it persists
-            st2->SetTextColor(kRed);
-            st2->SetLineColor(kRed);
-            st2->SetY1NDC(0.60);
-            st2->SetY2NDC(0.75);
-        }
-        delete tmp;
+        //TCanvas *tmp = new TCanvas(); // temp hidden canvas
+        //h_sig[name]->Draw("HIST");
+        //gPad->Update();
+        //TPaveStats *st2 = (TPaveStats*)h_sig[name]->FindObject("stats");
+        //if (st2) {
+          //  st2 = (TPaveStats*)st2->Clone(); // clone so it persists
+           // st2->SetTextColor(kRed);
+            //st2->SetLineColor(kRed);
+            //st2->SetY1NDC(0.60);
+            //st2->SetY2NDC(0.75);
+        //}
+        //delete tmp;
         // Back to main pad, draw overlay
-        c->cd();
+        //c->cd();
         h_sig[name]->Draw("HIST SAME");
-        if (st2) st2->Draw();
+
+        // Draw vertical lines if applicable
+        if (verticalLines.count(name)) {
+            for (double xpos : verticalLines[name]) {
+                TLine *line = new TLine(xpos, 0, xpos, 1.1 * max_val);
+                line->SetLineColor(kBlack);
+                line->SetLineStyle(2); // dashed
+                line->SetLineWidth(2);
+                line->Draw();
+           }
+        }
+        //if (st2) st2->Draw();
+
+        // Add legend  
+        TLegend *leg = new TLegend(0.65, 0.75, 0.88, 0.88);
+        leg->AddEntry(h_bkg[name], "Background", "f");
+        leg->AddEntry(h_sig[name], "Signal (MC)", "f");
+		leg->SetTextSize(0.03);
+        leg->SetBorderSize(0);
+        leg->Draw();
         c->SaveAs(("NewData/SigBkg_Plots/" + name + ".png").c_str());
         delete c;
     }

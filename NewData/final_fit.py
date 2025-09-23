@@ -24,6 +24,20 @@ import json
 import numpy as np
 from scipy.stats import chisquare
 
+def sigma_eff_and_err(f, df, sCB, dsCB, sG, dsG):
+    """Return effective sigma and propagated error (no correlations)."""
+    seff = np.sqrt(f*sCB**2 + (1-f)*sG**2)
+    if seff <= 0: 
+        return 0.0, 0.0
+
+    # partial derivatives
+    df_d   = (sCB**2 - sG**2) / (2*seff)
+    dsCB_d = f * sCB / seff
+    dsG_d  = (1-f) * sG / seff
+
+    var = (df_d*df)**2 + (dsCB_d*dsCB)**2 + (dsG_d*dsG)**2
+    return seff, np.sqrt(var)
+
 def select_best_candidates(tree, ml_threshold=0.8156):
     """Return indices of best-candidate-per-event that pass ML threshold."""
     best_per_event = {}
@@ -114,12 +128,12 @@ def fit_mc_RT_only():
     f.Close()
 
     params_RT = {
-        "mean": mean.getVal(),
-        "sigmaCB": sigmaCB.getVal(),
-        "alpha": alpha_RT.getVal(),
-        "n": n_RT.getVal(),
-        "sigmaG": sigmaG.getVal(),
-        "fracCB": frac_CB.getVal(),
+        "mean": [mean.getVal(), mean.getError()],
+        "sigmaCB": [sigmaCB.getVal(), sigmaCB.getError()],
+        "alpha": [alpha_RT.getVal(), alpha_RT.getError()],
+        "n": [n_RT.getVal(), n_RT.getError()],
+        "sigmaG": [sigmaG.getVal(), sigmaG.getError()],
+        "fracCB": [frac_CB.getVal(), frac_CB.getError()],
         "nsig": [nrt.getVal(), nrt.getError()]
     }
     with open("NewData/scalings/ML_RT_shape.json","w") as f:
@@ -201,12 +215,12 @@ def fit_mc_WT_only():
     f.Close()
 
     params_WT = {
-        "mean": mean.getVal(),
-        "sigmaCB": sigmaCB.getVal(),
-        "alpha":   alpha_WT.getVal(),
-        "n":       n_WT.getVal(),
-        "sigmaG":  sigmaG.getVal(),
-        "fracCB":  fracCB.getVal(),
+        "mean": [mean.getVal(), mean.getError()],
+        "sigmaCB": [sigmaCB.getVal(), sigmaCB.getError()],
+        "alpha": [alpha_WT.getVal(), alpha_WT.getError()],
+        "n": [n_WT.getVal(), n_WT.getError()],
+        "sigmaG": [sigmaG.getVal(), sigmaG.getError()],
+        "fracCB": [fracCB.getVal(), fracCB.getError()],
         "nsig": [nwt.getVal(), nwt.getError()]
     }
     with open("NewData/scalings/ML_WT_shape.json","w") as f:
@@ -257,21 +271,21 @@ def fit_mc():
     mean = RooRealVar("mean", "mean", 5.28, 5.24, 5.32)
 
     # RT CB+Gauss (fixed)
-    sigmaCB_RT  = RooRealVar("sigmaCB_RT","sigmaCB_RT", rt_shape["sigmaCB"],1e-5,1.0); sigmaCB_RT.setConstant(True)
-    alpha_RT    = RooRealVar("alpha_RT","alpha_RT", rt_shape["alpha"]); alpha_RT.setConstant(True)
-    n_RT        = RooRealVar("n_RT","n_RT", rt_shape["n"]); n_RT.setConstant(True)
-    sigmaG_RT   = RooRealVar("sigmaG_RT","sigmaG_RT", rt_shape["sigmaG"],1e-5,1.0); sigmaG_RT.setConstant(True)
-    fracCB_RT   = RooRealVar("fracCB_RT","fracCB_RT", rt_shape["fracCB"]); fracCB_RT.setConstant(True)
+    sigmaCB_RT  = RooRealVar("sigmaCB_RT","sigmaCB_RT", rt_shape["sigmaCB"][0],1e-5,1.0); sigmaCB_RT.setConstant(True)
+    alpha_RT    = RooRealVar("alpha_RT","alpha_RT", rt_shape["alpha"][0]); alpha_RT.setConstant(True)
+    n_RT        = RooRealVar("n_RT","n_RT", rt_shape["n"][0]); n_RT.setConstant(True)
+    sigmaG_RT   = RooRealVar("sigmaG_RT","sigmaG_RT", rt_shape["sigmaG"][0],1e-5,1.0); sigmaG_RT.setConstant(True)
+    fracCB_RT   = RooRealVar("fracCB_RT","fracCB_RT", rt_shape["fracCB"][0]); fracCB_RT.setConstant(True)
     cb_RT       = RooCBShape("cb_RT","cb_RT", mass, mean, sigmaCB_RT, alpha_RT, n_RT)
     g_RT        = RooGaussian("g_RT","g_RT", mass, mean, sigmaG_RT)
     sigRT       = RooAddPdf("sigRT","sigRT", RooArgList(cb_RT,g_RT), RooArgList(fracCB_RT))
 
     # WT CB+Gauss (fixed)
-    sigmaCB_WT  = RooRealVar("sigmaCB_WT","sigmaCB_WT", wt_shape["sigmaCB"],1e-5,1.0); sigmaCB_WT.setConstant(True)
-    alpha_WT    = RooRealVar("alpha_WT","alpha_WT", wt_shape["alpha"]); alpha_WT.setConstant(True)
-    n_WT        = RooRealVar("n_WT","n_WT", wt_shape["n"]); n_WT.setConstant(True)
-    sigmaG_WT   = RooRealVar("sigmaG_WT","sigmaG_WT", wt_shape["sigmaG"],1e-5,1.0); sigmaG_WT.setConstant(True)
-    fracCB_WT   = RooRealVar("fracCB_WT","fracCB_WT", wt_shape["fracCB"]); fracCB_WT.setConstant(True)
+    sigmaCB_WT  = RooRealVar("sigmaCB_WT","sigmaCB_WT", wt_shape["sigmaCB"][0],1e-5,1.0); sigmaCB_WT.setConstant(True)
+    alpha_WT    = RooRealVar("alpha_WT","alpha_WT", wt_shape["alpha"][0]); alpha_WT.setConstant(True)
+    n_WT        = RooRealVar("n_WT","n_WT", wt_shape["n"][0]); n_WT.setConstant(True)
+    sigmaG_WT   = RooRealVar("sigmaG_WT","sigmaG_WT", wt_shape["sigmaG"][0],1e-5,1.0); sigmaG_WT.setConstant(True)
+    fracCB_WT   = RooRealVar("fracCB_WT","fracCB_WT", wt_shape["fracCB"][0]); fracCB_WT.setConstant(True)
     cb_WT       = RooCBShape("cb_WT","cb_WT", mass, mean, sigmaCB_WT, alpha_WT, n_WT)
     g_WT        = RooGaussian("g_WT","g_WT", mass, mean, sigmaG_WT)
     sigWT       = RooAddPdf("sigWT","sigWT", RooArgList(cb_WT,g_WT), RooArgList(fracCB_WT))
@@ -285,10 +299,25 @@ def fit_mc():
     model = RooAddPdf("model","model", RooArgList(sig), RooArgList(nsig))
     model.fitTo(dh, RooFit.Extended(True))
 
-    # Effective sigmas
-    sigma_eff_RT = np.sqrt(fracCB_RT.getVal()*sigmaCB_RT.getVal()**2 + (1-fracCB_RT.getVal())*sigmaG_RT.getVal()**2)
-    sigma_eff_WT = np.sqrt(fracCB_WT.getVal()*sigmaCB_WT.getVal()**2 + (1-fracCB_WT.getVal())*sigmaG_WT.getVal()**2)
-    sigma_eff_total = np.sqrt((nRT_val*sigma_eff_RT**2 + nWT_val*sigma_eff_WT**2)/(nRT_val+nWT_val))
+    # --- Effective sigmas with error propagation ---
+    sRT, dsRT = sigma_eff_and_err(
+        rt_shape["fracCB"][0], rt_shape["fracCB"][1],
+        rt_shape["sigmaCB"][0], rt_shape["sigmaCB"][1],
+        rt_shape["sigmaG"][0],  rt_shape["sigmaG"][1]
+    )
+
+    sWT, dsWT = sigma_eff_and_err(
+        wt_shape["fracCB"][0], wt_shape["fracCB"][1],
+        wt_shape["sigmaCB"][0], wt_shape["sigmaCB"][1],
+        wt_shape["sigmaG"][0],  wt_shape["sigmaG"][1]
+    )
+
+    # total effective sigma and error
+    sigma_eff_total = np.sqrt((nRT_val*sRT**2 + nWT_val*sWT**2)/(nRT_val+nWT_val))
+    dsigma_eff_total = np.sqrt(
+        (nRT_val/(nRT_val+nWT_val))**2 * (2*sRT*dsRT)**2 +
+        (nWT_val/(nRT_val+nWT_val))**2 * (2*sWT*dsWT)**2
+    ) / (2*sigma_eff_total)   # derivative trick
 
     # sidebands from pm 3 σ_eff_total
     sb_left_min, sb_left_max   = mmin, mean.getVal() - 3*sigma_eff_total
@@ -304,9 +333,9 @@ def fit_mc():
         "RT": {**rt_shape, "nsig": [nRT, nRT_err]},
         "WT": {**wt_shape, "nsig": [nWT, nWT_err]},
         "fRT": fRT_val,
-        "sigma_eff_RT": float(sigma_eff_RT),
-        "sigma_eff_WT": float(sigma_eff_WT),
-        "sigma_eff_total": float(sigma_eff_total),
+        "sigma_eff_RT": [float(sRT), float(dsRT)],
+        "sigma_eff_WT": [float(sWT), float(dsWT)],
+        "sigma_eff_total": [float(sigma_eff_total), float(dsigma_eff_total)],
         "sb_left_min": sb_left_min, "sb_left_max": sb_left_max,
         "sb_right_min": sb_right_min, "sb_right_max": sb_right_max,
         "nsig": [nsig.getVal(), nsig.getError()]
@@ -352,14 +381,14 @@ def fit_mc():
 
     # annotations with TLatex
     L = TLatex(); L.SetNDC(); L.SetTextSize(0.025)
-    y, step = 0.85, 0.035
+    y, step = 0.85, 0.040
 
     L.DrawLatex(0.15, y,       f"Y_{{RT}}: {nRT:.0f} #pm {nRT_err:.0f}")
     L.DrawLatex(0.15, y-step,  f"Y_{{WT}}: {nWT:.0f} #pm {nWT_err:.0f}")
     L.DrawLatex(0.15, y-2*step,f"Mean: {mean.getVal():5.4f} #pm {mean.getError():5.4f} GeV/c^{{2}}")
-    L.DrawLatex(0.15, y-3*step,f"#sigma_{{eff}}^{{RT}}: {sigma_eff_RT*1e3:4.1f} MeV")
-    L.DrawLatex(0.15, y-4*step,f"#sigma_{{eff}}^{{WT}}: {sigma_eff_WT*1e3:4.1f} MeV")
-    L.DrawLatex(0.15, y-5*step,f"#sigma_{{eff}}^{{tot}}: {sigma_eff_total*1e3:4.1f} MeV")
+    L.DrawLatex(0.15, y-3*step,f"#sigma_{{eff}}^{{RT}}: {sRT*1e3:4.1f}  #pm {dsRT*1e3:4.1f}MeV")
+    L.DrawLatex(0.15, y-4*step,f"#sigma_{{eff}}^{{WT}}: {sWT*1e3:4.1f} #pm {dsWT*1e3:4.1f}MeV")
+    L.DrawLatex(0.15, y-5*step,f"#sigma_{{eff}}^{{tot}}: {sigma_eff_total*1e3:4.1f} #pm {dsigma_eff_total*1e3:4.1f}MeV")
     L.DrawLatex(0.15, y-6*step,f"f_{{RT}}: {100.0*fRT_val:.1f}%")
     L.DrawLatex(0.15, y-7*step,f"#chi^{{2}}/ndf: {chi2_ndf:.2f}")
 
@@ -403,27 +432,27 @@ def fit_data():
     mean = RooRealVar("mean", "mean", mc["mean"][0]); mean.setConstant(True)
 
     # ---- RT: CB + Gaussian (all fixed) ----
-    sigmaCB_RT = RooRealVar("sigmaCB_RT","sigmaCB_RT", mc["RT"]["sigmaCB"], 1e-5, 1.0); sigmaCB_RT.setConstant(True)
-    alpha_RT   = RooRealVar("alpha_RT",  "alpha_RT",  mc["RT"]["alpha"]);   alpha_RT.setConstant(True)
-    n_RT       = RooRealVar("n_RT",      "n_RT",      mc["RT"]["n"]);       n_RT.setConstant(True)
+    sigmaCB_RT = RooRealVar("sigmaCB_RT","sigmaCB_RT", mc["RT"]["sigmaCB"][0], 1e-5, 1.0); sigmaCB_RT.setConstant(True)
+    alpha_RT   = RooRealVar("alpha_RT",  "alpha_RT",  mc["RT"]["alpha"][0]);   alpha_RT.setConstant(True)
+    n_RT       = RooRealVar("n_RT",      "n_RT",      mc["RT"]["n"][0]);       n_RT.setConstant(True)
     cb_RT      = RooCBShape("cb_RT", "cb_RT", mass, mean, sigmaCB_RT, alpha_RT, n_RT)
 
-    sigmaG_RT  = RooRealVar("sigmaG_RT", "sigmaG_RT", mc["RT"]["sigmaG"], 1e-5, 1.0); sigmaG_RT.setConstant(True)
+    sigmaG_RT  = RooRealVar("sigmaG_RT", "sigmaG_RT", mc["RT"]["sigmaG"][0], 1e-5, 1.0); sigmaG_RT.setConstant(True)
     g_RT       = RooGaussian("g_RT", "g_RT", mass, mean, sigmaG_RT)
 
-    fracCB_RT  = RooRealVar("fracCB_RT","fracCB_RT", mc["RT"]["fracCB"]);   fracCB_RT.setConstant(True)
+    fracCB_RT  = RooRealVar("fracCB_RT","fracCB_RT", mc["RT"]["fracCB"][0]);   fracCB_RT.setConstant(True)
     sigRT      = RooAddPdf("sigRT", "sigRT", RooArgList(cb_RT, g_RT), RooArgList(fracCB_RT))
 
     # ---- WT: CB + Gaussian (all fixed) ----
-    sigmaCB_WT = RooRealVar("sigmaCB_WT","sigmaCB_WT", mc["WT"]["sigmaCB"], 1e-5, 1.0); sigmaCB_WT.setConstant(True)
-    alpha_WT   = RooRealVar("alpha_WT",  "alpha_WT",  mc["WT"]["alpha"]);   alpha_WT.setConstant(True)
-    n_WT       = RooRealVar("n_WT",      "n_WT",      mc["WT"]["n"]);       n_WT.setConstant(True)
+    sigmaCB_WT = RooRealVar("sigmaCB_WT","sigmaCB_WT", mc["WT"]["sigmaCB"][0], 1e-5, 1.0); sigmaCB_WT.setConstant(True)
+    alpha_WT   = RooRealVar("alpha_WT",  "alpha_WT",  mc["WT"]["alpha"][0]);   alpha_WT.setConstant(True)
+    n_WT       = RooRealVar("n_WT",      "n_WT",      mc["WT"]["n"][0]);       n_WT.setConstant(True)
     cb_WT      = RooCBShape("cb_WT", "cb_WT", mass, mean, sigmaCB_WT, alpha_WT, n_WT)
 
-    sigmaG_WT  = RooRealVar("sigmaG_WT", "sigmaG_WT", mc["WT"]["sigmaG"], 1e-5, 1.0); sigmaG_WT.setConstant(True)
+    sigmaG_WT  = RooRealVar("sigmaG_WT", "sigmaG_WT", mc["WT"]["sigmaG"][0], 1e-5, 1.0); sigmaG_WT.setConstant(True)
     g_WT       = RooGaussian("g_WT", "g_WT", mass, mean, sigmaG_WT)
 
-    fracCB_WT  = RooRealVar("fracCB_WT","fracCB_WT", mc["WT"]["fracCB"]);   fracCB_WT.setConstant(True)
+    fracCB_WT  = RooRealVar("fracCB_WT","fracCB_WT", mc["WT"]["fracCB"][0]);   fracCB_WT.setConstant(True)
     sigWT      = RooAddPdf("sigWT", "sigWT", RooArgList(cb_WT, g_WT), RooArgList(fracCB_WT))
 
     # ---- RT/WT mixture with fixed fRT ----
